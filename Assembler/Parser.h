@@ -15,7 +15,6 @@
 #include "Lexer.h"
 
 #include "Common.h"
-#include "LogisimPrinter.h"
 
 //TODO move to ..\utils
 #include "Timer.h"
@@ -88,7 +87,7 @@ namespace asmc
 
 		MemoryLayout parseOperand(uint32_t opcode);
 
-		uint8_t convertToBytes(std::string& text);
+		uint8_t convertToBytes(std::string& text, uint8_t index, asmc::UzTip regtype);
 
 		PacketAdrPReg getAdr_P_RegPart(std::string& operand);
 
@@ -102,7 +101,6 @@ namespace asmc
 		int m_lineNumber;
 
 		asmc::Lexer& m_lexer;
-		LogisimPrinter logisimPrinter;
 
 		asmc::Token m_currentToken;
 		asmc::Token m_peekToken;

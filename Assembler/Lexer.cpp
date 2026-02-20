@@ -251,9 +251,9 @@ asmc::Token Lexer::lexHexNumberPart()
 	size_t startpos = m_position;
 
 	while (std::isxdigit(peek()))
-	{
-		nextChar();
-		length++;
+	{		
+		nextChar();		
+		length++;	
 	}
 
 	std::string tokenStr = m_program.substr(startpos, length);

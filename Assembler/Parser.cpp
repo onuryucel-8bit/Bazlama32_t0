@@ -250,12 +250,6 @@ void Parser::writeOutput()
 			  }
 	);
 
-	//--------------------------------------------------------------//
-	//output Logisim RAM file
-	//--------------------------------------------------------------//
-
-	logisimPrinter.print(m_output);
-
 
 	//--------------------------------------------------------------//
 	//output EMU file
@@ -264,27 +258,19 @@ void Parser::writeOutput()
 	std::ofstream file("emuHex.txt");
 
 	if (file.is_open())
-	{
-		size_t usedBytes = 0;
-		//TODO hold total bytes in member variable
-		for (size_t i = 0; i < m_output.size(); i++)
-		{
-			usedBytes += m_output[i].m_packetSize;
-		}
-
-		file << usedBytes << "\n";
-
+	{		
 		//write as hex
 		file << std::hex;
 		for (size_t i = 0; i < m_output.size(); i++)
 		{
 			//write opcode's ram location " " opcode
-			file << m_output[i].m_ramIndex << " " << m_output[i].m_opcode;
+			file << m_output[i].m_ramIndex << " " << (int)m_output[i].m_opcode;
 			
-			//if opcode got second part
-			if (m_output[i].m_packetSize == 2)
-			{				
-				file << "\n" << m_output[i].m_ramIndex + 1 << " " << m_output[i].m_secondPart;
+			size_t ramIndex = m_output[i].m_ramIndex + 1;
+			for (size_t j = 0; j < m_output[i].m_packetSize; j++)
+			{			
+				file << "\n" << ramIndex << " " << (int)m_output[i].m_packet[j];
+				ramIndex++;
 			}
 
 			file << "\n";
@@ -688,9 +674,27 @@ MemoryLayout Parser::parseOperand(uint32_t opcode)
 	return memlay;
 }
 
-uint8_t Parser::convertToBytes(std::string& text)
+uint8_t Parser::convertToBytes(std::string& text, uint8_t index, asmc::UzTip regtype)
 {
-	return 0;
+	if (text.length() > 8)
+	{
+		printError("hex number out of range of 32bit value");
+		return 0;
+	}
+
+	if (text.length() > (regtype + 1) * 2)
+	{
+		printWarning("value is higher than register size lower bytes will be ignored");
+	}
+
+	//ffffffff
+	//01234567	
+
+	std::string subStr = text.substr(index, 2);
+	
+	uint8_t retval = rdx::hexToDec_8(subStr);
+
+	return retval;
 }
 
 PacketAdrPReg Parser::getAdr_P_RegPart(std::string& operand)
@@ -927,32 +931,37 @@ void Parser::parseLOAD()
 
 	MemoryLayout memlay;
 
+	int index = 0;
+
+
+	memlay.m_opcode = opcode;
+	memlay.m_regPart = registerPart;
+	//REG_8  => 0  1
+	//REG_16 => 1  2
+	//REG_32 => 3  4
+	memlay.m_packetSize = regType + 1;
+	memlay.m_ramIndex = m_ramLocation;
+
 	switch (m_currentToken.m_type)
 	{
 	case asmc::TokenType::HEXNUMBER:		
 		registerPart = asmc_CombineRegUz(registerPart, regType);	
 
-		memlay.m_packet = new uint8_t[(regType * 2)];
-
-		for (size_t i = 0; i < regType * 2; i++)
+		memlay.m_packet = new uint8_t[regType + 1];
+				
+		for (size_t i = 0; i < (regType + 1) * 2; i += 2)
 		{
-			memlay.m_packet[i] = convertToBytes(m_currentToken.m_text);
+			memlay.m_packet[index] = convertToBytes(m_currentToken.m_text, i, regType);
+			index++;
+
+			m_ramLocation++;
 		}
 
 		break;
 	}
 
 	
-
-	memlay.m_opcode = opcode;
-	memlay.m_regPart = registerPart;
-	//REG_8  => 0  1
-	//REG_16 => 1  2
-	//REG_32 => 2  4
-	memlay.m_packetSize = regType + 1;
-
-	
-
+	m_output.push_back(memlay);
 	/*if (m_currentToken.m_type == asmc::TokenType::REGISTER)
 	{
 		printError("unexpected register for second operand [LOAD rx, (..)!]");

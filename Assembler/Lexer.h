@@ -18,7 +18,7 @@ enum UzTip
 {
 	REG_8,
 	REG_16,
-	REG_32
+	REG_32 = 3
 };
 
 struct Token

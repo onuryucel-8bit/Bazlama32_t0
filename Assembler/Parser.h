@@ -51,126 +51,138 @@
 #define asmc_CombineRegB(opcode, regb) \
 	((opcode) | ((regb) << asmc_ShiftAmount_RegB))
 
+#define asmc_CombineRegUz(regPart, uz) \
+	(regPart) | ( (uz) << 6 )
 
 namespace asmc
 {
 
-class Parser
-{
-public:
-	Parser(asmc::Lexer& lexer);
-	~Parser();
+	enum modBits
+	{
+		number,
+		adr,
+		regAdr,
+		adr_p_reg,
+	};
 
-	void run();
-private:
+	class Parser
+	{
+	public:
+		Parser(asmc::Lexer& lexer);
+		~Parser();
+
+		void run();
+	private:
 	
 	
-	void program();
+		void program();
 
-	void moveCurrentToken();
+		void moveCurrentToken();
 	
-	void checkTables();
+		void checkTables();
 
-	void printError(std::string message);
-	void printWarning(std::string message);
+		void printError(std::string message);
+		void printWarning(std::string message);
 
-	void writeOutput();
+		void writeOutput();
 
-	MemoryLayout parseOperand(uint32_t opcode);
+		MemoryLayout parseOperand(uint32_t opcode);
 
-	PacketAdrPReg getAdr_P_RegPart(std::string& operand);
+		uint8_t convertToBytes(std::string& text);
 
-#ifdef PARSER_TEST_FUNCS
-	asmc::TokenType toToken(size_t opcode);
-	void printBinHex(std::bitset<32> opcode, std::bitset<32> operand);
-	void printCurrentPeekToken();
-#endif // PARSER_TEST_FUNCS
+		PacketAdrPReg getAdr_P_RegPart(std::string& operand);
 
-	int m_ramLocation;
-	int m_lineNumber;
+	#ifdef PARSER_TEST_FUNCS
+		asmc::TokenType toToken(size_t opcode);
+		void printBinHex(std::bitset<32> opcode, std::bitset<32> operand);
+		void printCurrentPeekToken();
+	#endif // PARSER_TEST_FUNCS
 
-	asmc::Lexer& m_lexer;
-	LogisimPrinter logisimPrinter;
+		int m_ramLocation;
+		int m_lineNumber;
 
-	asmc::Token m_currentToken;
-	asmc::Token m_peekToken;
+		asmc::Lexer& m_lexer;
+		LogisimPrinter logisimPrinter;
 
-	std::unordered_map<asmc::Token, asmc::Symbol> m_symbolTable;
-	std::unordered_map<asmc::Token, std::vector<asmc::UnresolvedEntry>> m_unresolvedTable;
+		asmc::Token m_currentToken;
+		asmc::Token m_peekToken;
 
-	std::unordered_map<asmc::TokenType, uint32_t> m_opcodeHexTable;
+		std::unordered_map<asmc::Token, asmc::Symbol> m_symbolTable;
+		std::unordered_map<asmc::Token, std::vector<asmc::UnresolvedEntry>> m_unresolvedTable;
 
-	std::vector<asmc::MemoryLayout> m_output;
+		std::unordered_map<asmc::TokenType, uint32_t> m_opcodeHexTable;
 
-	//8byte
-	using funcPtr = void (asmc::Parser::*)();
+		std::vector<asmc::MemoryLayout> m_output;
 
-	funcPtr m_parserFuncs[64];
-	std::array<asmc::Token, asmc_MAX_TOKEN_LIST_SIZE> m_tokenList;
-	size_t m_tokenIndex;
+		//8byte
+		using funcPtr = void (asmc::Parser::*)();
 
-	asmc::Token m_lastFuncName;
+		funcPtr m_parserFuncs[64];
+		std::array<asmc::Token, asmc_MAX_TOKEN_LIST_SIZE> m_tokenList;
+		size_t m_tokenIndex;
 
-	bool f_error;
-	bool fd_printHexOutput;//flag debug fd
-	bool fd_scanTables;
+		asmc::Token m_lastFuncName;
+
+		bool f_error;
+		bool fd_printHexOutput;//flag debug fd
+		bool fd_scanTables;
 	
-	size_t m_errorCounter;
+		size_t m_errorCounter;
 
-	/*
-	*	opcode = opcode_HEX_VAL;
-	*	
-	*	getSecondPart();
-	* 
-	*	//insert Mod bits
-	*	switch()
-	*		...
-	* 
-	*	output.push_back(opcode_val);
-	*/
-	void parseNOP();
-	void parseORIGIN();
-	void parseDB();
-	void parseDEFINE();
-	void parseINCLUDE();
+		/*
+		*	opcode = opcode_HEX_VAL;
+		*	
+		*	getSecondPart();
+		* 
+		*	//insert Mod bits
+		*	switch()
+		*		...
+		* 
+		*	output.push_back(opcode_val);
+		*/
+		void parseNOP();
+		void parseORIGIN();
+		void parseDB();
+		void parseDEFINE();
+		void parseINCLUDE();
 
-	//-----------parseX()--------------//
+		//-----------parseX()--------------//
 	
-	void parseLOAD();
-	void parseMOV();
-	void parseSTR();
+		void parseLOAD();
+		void parseMOV();
+		void parseSTR();
 
 
-	//------------------ALU-------------//
-	void parseArithmeticPart();
+		//------------------ALU-------------//
+		void parseArithmeticPart();
 
-	//----parse and,or,xor,shl,shr-------//
-	void parseLogicPart();
+		//----parse and,or,xor,shl,shr-------//
+		void parseLogicPart();
 
-	//----------------------------------//
+		//----------------------------------//
 
-	void parseNOT();
+		void parseNOT();
 
-	void parseCMP();
-	//-----------------------------------//
+		void parseCMP();
+		//-----------------------------------//
 
-	void parsePUSH();
-	void parsePOP();
+		void parsePUSH();
+		void parsePOP();
 
-	void parseKWAIT();
-	void parseMWE();
-	void parseMR();
+		void parseKWAIT();
+		void parseMWE();
+		void parseMR();
 	
-	void parseLabel();
+		void parseLabel();
 
-	void parseCALL();
-	void parseFUNC();
-	void parseRET();
+		void parseCALL();
+		void parseFUNC();
+		void parseRET();
 
-	//----parse jmp,jlz,jgz,jcf....-------//
-	void parseJMP();
+		//----parse jmp,jlz,jgz,jcf....-------//
+		void parseJMP();
 
-};
+	};
 
 }
 

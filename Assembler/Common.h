@@ -80,8 +80,11 @@ namespace asmc
 
 	struct MemoryLayout
 	{
-		uint32_t m_opcode = 0;
-		uint32_t m_secondPart = 0;
+		uint8_t m_opcode = 0;
+		uint8_t m_secondPart = 0;
+		uint8_t m_regPart = 0;
+		//TODO add delete
+		uint8_t* m_packet = nullptr;
 		int m_ramIndex = -1;
 		char m_packetSize = 0;
 	};

@@ -14,10 +14,18 @@
 namespace asmc
 {
 
+enum UzTip
+{
+	REG_8,
+	REG_16,
+	REG_32
+};
+
 struct Token
 {
 	std::string m_text = "";
-	TokenType m_type = TokenType::EMPTY;
+	asmc::TokenType m_type = TokenType::EMPTY;
+	asmc::UzTip m_regType = asmc::UzTip::REG_8;
 	size_t m_lineNumber = 0;
 
 	bool operator==(const Token& other) const

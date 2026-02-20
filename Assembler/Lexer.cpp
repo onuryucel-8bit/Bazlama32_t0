@@ -72,7 +72,11 @@ Token Lexer::getToken()
 	{
 		//Register?
 		//isdigit() checks next char is it number
-		if (m_currentChar == 'r' && std::isdigit(peek()))
+		if (m_currentChar == 'r' && (
+			peek() == 's' || 
+			peek() == 'a' ||
+			peek() == 'o')
+		)
 		{
 			token = lexRegPart();
 		}
@@ -104,7 +108,7 @@ Token Lexer::getToken()
 
 			std::string tokenStr = m_program.substr(startpos, length);
 
-			token = { tokenStr, asmc::TokenType::DECIMAL, m_lineNumber };
+			token = { tokenStr, asmc::TokenType::DECIMAL, asmc::UzTip::REG_8, m_lineNumber };
 		}
 	}
 	else
@@ -128,7 +132,7 @@ std::array<asmc::Token, asmc_MAX_TOKEN_LIST_SIZE> Lexer::getTokenList()
 
 		if (token.m_type == asmc::TokenType::ENDOFFILE)
 		{												
-			m_tokenArr[i] = { "EOF", asmc::TokenType::ENDOFFILE, m_lineNumber};
+			m_tokenArr[i] = { "EOF", asmc::TokenType::ENDOFFILE, asmc::UzTip::REG_8, m_lineNumber};
 		}
 
 		if (token.m_type != asmc::TokenType::NEWLINE && token.m_type != asmc::TokenType::DEBUG_TOKEN)
@@ -172,7 +176,7 @@ asmc::Token Lexer::lexDotPart()
 	{
 		//returns ORIGIN or DB token
 		std::optional<asmc::TokenType> enumVal = magic_enum::enum_cast<asmc::TokenType>(tokenStr);
-		token = { tokenStr, enumVal.value() , m_lineNumber };
+		token = { tokenStr, enumVal.value() , asmc::UzTip::REG_8, m_lineNumber };
 	}
 	else
 	{
@@ -187,22 +191,48 @@ asmc::Token Lexer::lexRegPart()
 {	
 	asmc::Token token;
 
-	//input r0,r1,r2,r5
+	//input rs,ra,ro
 	//skip 'r' part
-	nextChar();	
+	nextChar();			
+
+	
+
+	char regType = m_currentChar;	
+	
+	nextChar();
+	
 
 	//register MUST be range 0-7 and next char CANNOT be alphanumeric
-	if (std::isdigit(static_cast<uint8_t>(peek())) || std::isalpha(peek()))
+	if (!std::isdigit(static_cast<uint8_t>(m_currentChar)))
 	{		
 		printError("invalid reg operand it MUST be r[0-7]");
 
 		//empty token => error
-		token = { std::string(1,m_currentChar), asmc::TokenType::EMPTY, m_lineNumber};
+		token = { std::string(1,m_currentChar), asmc::TokenType::EMPTY, asmc::UzTip::REG_8, m_lineNumber};
 
 		return token;
 	}
-	
-	return token = { std::string(1,m_currentChar), asmc::TokenType::REGISTER, m_lineNumber };
+
+	switch (regType)
+	{
+	case 's':
+		token.m_regType = asmc::UzTip::REG_8;
+		break;
+
+	case 'a':
+		token.m_regType = asmc::UzTip::REG_16;
+		break;
+
+	case 'o':
+		token.m_regType = asmc::UzTip::REG_32;
+		break;
+	}
+
+	token.m_text = std::string(1, m_currentChar);
+	token.m_type = asmc::TokenType::REGISTER;
+	token.m_lineNumber = m_lineNumber;
+
+	return token;
 }
 
 asmc::Token Lexer::lexHexNumberPart()
@@ -229,7 +259,7 @@ asmc::Token Lexer::lexHexNumberPart()
 	std::string tokenStr = m_program.substr(startpos, length);
 	//-----------------------//
 
-	return token = {tokenStr, asmc::TokenType::HEXNUMBER, m_lineNumber };
+	return token = {tokenStr, asmc::TokenType::HEXNUMBER, asmc::UzTip::REG_8, m_lineNumber };
 }
 
 asmc::Token Lexer::lexSingleChar()
@@ -261,7 +291,7 @@ asmc::Token Lexer::lexSingleChar()
 		if (m_currentChar == 'r')
 		{
 			nextChar();
-			token = { std::string(1, m_currentChar), asmc::TokenType::REGADR, m_lineNumber};
+			token = { std::string(1, m_currentChar), asmc::TokenType::REGADR, asmc::UzTip::REG_8, m_lineNumber};
 		}
 		else
 		{
@@ -285,12 +315,12 @@ asmc::Token Lexer::lexSingleChar()
 					nextChar();//get register hex value
 					tokenStr += m_currentChar;
 
-					token = { tokenStr, asmc::TokenType::ADR_P_REG, m_lineNumber };
+					token = { tokenStr, asmc::TokenType::ADR_P_REG, asmc::UzTip::REG_8, m_lineNumber };
 				}
 			}
 			else
 			{
-				token = { tokenStr, asmc::TokenType::ADDRESS, m_lineNumber };
+				token = { tokenStr, asmc::TokenType::ADDRESS, asmc::UzTip::REG_8, m_lineNumber };
 			}
 
 			
@@ -328,20 +358,20 @@ asmc::Token Lexer::lexSingleChar()
 			}
 			nextChar();//skip "
 
-			token = { tokenStr, asmc::TokenType::DIRECTORY, m_lineNumber };
+			token = { tokenStr, asmc::TokenType::DIRECTORY, asmc::UzTip::REG_8, m_lineNumber };
 			m_returnPosition = m_position;
 			m_returnCurrentChar = m_currentChar;
 			m_retLineNumber = m_lineNumber;
 		}
 		else
 		{
-			token = { tokenStr, asmc::TokenType::STRING, m_lineNumber };
+			token = { tokenStr, asmc::TokenType::STRING, asmc::UzTip::REG_8, m_lineNumber };
 		}		
 		
 		break;
 
 	case ENDOFFILE:
-		token = { std::string(1,m_currentChar), asmc::TokenType::ENDOFFILE, m_lineNumber };
+		token = { std::string(1,m_currentChar), asmc::TokenType::ENDOFFILE, asmc::UzTip::REG_8, m_lineNumber };
 		break;
 
 	default:
@@ -361,20 +391,20 @@ asmc::Token Lexer::lexWord()
 	//closes debug info
 	if (tokenStr == asmc_CLOSE_DEBUG_WORD)
 	{
-		token = { tokenStr, asmc::TokenType::DEBUG_TOKEN, m_lineNumber };
+		token = { tokenStr, asmc::TokenType::DEBUG_TOKEN, asmc::UzTip::REG_8, m_lineNumber };
 	}
 	//check if tokenStr is a keyword(LOAD,XOR,AND, ...)
 	else if (checkIfKeyword(tokenStr))
 	{
 		std::optional<TokenType> enumVal = magic_enum::enum_cast<TokenType>(tokenStr);
-		token = { tokenStr, enumVal.value(), m_lineNumber };
+		token = { tokenStr, enumVal.value(), asmc::UzTip::REG_8, m_lineNumber };
 	}
 	else
 	{
 		//valid label examples LOOP: CLEAR: ...
 		if (peek() == ':')
 		{
-			token = { tokenStr, asmc::TokenType::LABEL, m_lineNumber };
+			token = { tokenStr, asmc::TokenType::LABEL, asmc::UzTip::REG_8, m_lineNumber };
 			nextChar();
 
 		}
@@ -389,11 +419,11 @@ asmc::Token Lexer::lexWord()
 			if (m_lastToken.m_type >= asmc::TokenType::JMP &&
 				m_lastToken.m_type <= asmc::TokenType::JUMP_INST)
 			{
-				token = { tokenStr, TokenType::LABEL, m_lineNumber };
+				token = { tokenStr, TokenType::LABEL, asmc::UzTip::REG_8, m_lineNumber };
 			}
 			else
 			{
-				token = { tokenStr, TokenType::ID, m_lineNumber };
+				token = { tokenStr, TokenType::ID, asmc::UzTip::REG_8, m_lineNumber };
 			}
 		}
 	}
@@ -412,7 +442,7 @@ asmc::Token Lexer::lexMacro()
 	if (checkIfKeyword(tokenStr))
 	{
 		std::optional<TokenType> enumVal = magic_enum::enum_cast<TokenType>(tokenStr);
-		token = { tokenStr, enumVal.value(), m_lineNumber };
+		token = { tokenStr, enumVal.value(), asmc::UzTip::REG_8, m_lineNumber };
 	}
 	else
 	{

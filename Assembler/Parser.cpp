@@ -688,6 +688,11 @@ MemoryLayout Parser::parseOperand(uint32_t opcode)
 	return memlay;
 }
 
+uint8_t Parser::convertToBytes(std::string& text)
+{
+	return 0;
+}
+
 PacketAdrPReg Parser::getAdr_P_RegPart(std::string& operand)
 {
 	//~~same thing as Lexer::getSubStr(int,int,int (*)(int))
@@ -903,22 +908,52 @@ void Parser::parseLOAD()
 		return;
 	}
 
-	uint32_t opcode = m_opcodeHexTable[asmc::TokenType::LOAD] << asmc_ShiftAmount_Opcode;
+	
+	uint8_t opcode = m_opcodeHexTable[asmc::TokenType::LOAD];
 
 	moveCurrentToken();
-	uint32_t registerPart = rdx::hexToDec(m_currentToken.m_text);
+	
+	asmc::UzTip regType = m_currentToken.m_regType;
+	uint8_t registerPart = rdx::hexToDec(m_currentToken.m_text);
 
 	if (registerPart > 7)
 	{
 		printError("Register(s) must be in range [0-7]");
 	}
-	
-	opcode = asmc_CombineRegB(opcode, registerPart);
+	//load rs0, 0x5
+	//load rs0, @rsy	
 
 	moveCurrentToken();
 
 	MemoryLayout memlay;
-	if (m_currentToken.m_type == asmc::TokenType::REGISTER)
+
+	switch (m_currentToken.m_type)
+	{
+	case asmc::TokenType::HEXNUMBER:		
+		registerPart = asmc_CombineRegUz(registerPart, regType);	
+
+		memlay.m_packet = new uint8_t[(regType * 2)];
+
+		for (size_t i = 0; i < regType * 2; i++)
+		{
+			memlay.m_packet[i] = convertToBytes(m_currentToken.m_text);
+		}
+
+		break;
+	}
+
+	
+
+	memlay.m_opcode = opcode;
+	memlay.m_regPart = registerPart;
+	//REG_8  => 0  1
+	//REG_16 => 1  2
+	//REG_32 => 2  4
+	memlay.m_packetSize = regType + 1;
+
+	
+
+	/*if (m_currentToken.m_type == asmc::TokenType::REGISTER)
 	{
 		printError("unexpected register for second operand [LOAD rx, (..)!]");
 	}
@@ -927,7 +962,7 @@ void Parser::parseLOAD()
 		memlay = parseOperand(opcode);
 
 		m_output.push_back(memlay);
-	}
+	}*/
 	
 
 }
@@ -1343,7 +1378,7 @@ void Parser::parsePUSH()
 
 void Parser::parsePOP()
 {
-	uint32_t opcode = m_opcodeHexTable[asmc::TokenType::POP] << asmc_ShiftAmount_Opcode;
+	uint8_t opcode = m_opcodeHexTable[asmc::TokenType::POP];
 
 	opcode |= 0b111 << asmc_ShiftAmount_RegA;
 

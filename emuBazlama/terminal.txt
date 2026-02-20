@@ -1,0 +1,46 @@
+#define tty 0xffff'ffff
+#define printChar(reg) load reg,tty
+
+;char
+load rs0,@terminalstr
+;char*
+load roa1,terminalstr
+
+call print
+
+std_terminal_loop:
+	
+	;adres al
+	;gb girdi birimi
+	std_terminal_gb:
+		keyw		
+		cmp r0, 'enter'
+		je std_terminal_cks
+
+		;todo hexToAscii
+		call hexToAscii
+
+		jne std_terminal_gb
+
+	je std_terminal_cks:
+
+
+jmp std_terminal_loop
+
+
+;r0 char
+;r1 pos
+func print
+
+	std_print_loop:
+		printChar(r0)
+		add rs1, 1
+
+		load rs0,@roa1
+
+		cmp roi1, 0
+		jne std_print_loop
+ret
+
+terminalestr:
+	"DENIZ ANASI OS v0.2"

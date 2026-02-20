@@ -1,0 +1,30 @@
+while(true)
+{
+	while(inp != 'R')
+	{
+		std::cin >>;
+	}
+
+	while(inp != ENTER)
+	{
+		std::cin >> adres;
+	}
+
+	call adres
+
+}
+
+void loader()
+{
+	while(inp != ENTER)
+	{
+		std::cin >> adres;
+	}
+
+	while(inp != ENTER)
+	{
+		ram[adres] = inp;
+		adres++;
+	}
+}
+

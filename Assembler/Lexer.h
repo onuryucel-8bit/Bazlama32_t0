@@ -16,9 +16,9 @@ namespace asmc
 
 enum UzTip
 {
-	REG_8,
-	REG_16,
-	REG_32 = 3
+	REG_8,		//s
+	REG_16,		//a
+	REG_32 = 3	//o
 };
 
 struct Token

@@ -264,16 +264,19 @@ void Parser::writeOutput()
 		for (size_t i = 0; i < m_output.size(); i++)
 		{
 			//write opcode's ram location " " opcode
-			file << m_output[i].m_ramIndex << " " << (int)m_output[i].m_opcode;
+			size_t ramIndex = m_output[i].m_ramIndex;
 			
-			size_t ramIndex = m_output[i].m_ramIndex + 1;
+			file << ramIndex << " " << (int)m_output[i].m_opcode << "\n";
+			ramIndex++;
+
+			file << ramIndex << " " << (int)m_output[i].m_regPart << "\n";
+			ramIndex++;
+			
 			for (size_t j = 0; j < m_output[i].m_packetSize; j++)
 			{			
-				file << "\n" << ramIndex << " " << (int)m_output[i].m_packet[j];
+				file << ramIndex << " " << (int)m_output[i].m_packet[j] <<"\n";
 				ramIndex++;
-			}
-
-			file << "\n";
+			}			
 		}
 
 		file.close();
@@ -942,6 +945,9 @@ void Parser::parseLOAD()
 	memlay.m_packetSize = regType + 1;
 	memlay.m_ramIndex = m_ramLocation;
 
+	//regPart
+	m_ramLocation++;
+
 	switch (m_currentToken.m_type)
 	{
 	case asmc::TokenType::HEXNUMBER:		
@@ -953,14 +959,14 @@ void Parser::parseLOAD()
 		{
 			memlay.m_packet[index] = convertToBytes(m_currentToken.m_text, i, regType);
 			index++;
-
 			m_ramLocation++;
+			
 		}
 
 		break;
 	}
 
-	
+	m_ramLocation++;
 	m_output.push_back(memlay);
 	/*if (m_currentToken.m_type == asmc::TokenType::REGISTER)
 	{

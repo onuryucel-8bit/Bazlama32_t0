@@ -81,7 +81,10 @@ namespace asmc
 	struct MemoryLayout
 	{
 		uint8_t m_opcode = 0;
+
+		//TODO remove
 		uint8_t m_secondPart = 0;
+
 		uint8_t m_regPart = 0;
 
 		//TODO !!MEMORY LEAK!! add delete

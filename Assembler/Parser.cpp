@@ -677,27 +677,35 @@ MemoryLayout Parser::parseOperand(uint32_t opcode)
 	return memlay;
 }
 
-uint8_t Parser::convertToBytes(std::string& text, uint8_t index, asmc::UzTip regtype)
+void Parser::convertToBytes(std::string& text, asmc::UzTip regtype, asmc::MemoryLayout& memlay)
 {
 	if (text.length() > 8)
 	{
 		printError("hex number out of range of 32bit value");
-		return 0;
+		return;
 	}
-
-	if (text.length() > (regtype + 1) * 2)
+	else if (text.length() < (regtype + 1) * 2)
+	{
+		printError("hex number MUST same length with register");
+		return;
+	}
+	else if (text.length() > (regtype + 1) * 2)
 	{
 		printWarning("value is higher than register size lower bytes will be ignored");
 	}
 
-	//ffffffff
-	//01234567	
+	int index = 0;
+	for (size_t i = 0; i < (regtype + 1) * 2; i += 2)
+	{
+		std::string subStr = text.substr(i, 2);
 
-	std::string subStr = text.substr(index, 2);
-	
-	uint8_t retval = rdx::hexToDec_8(subStr);
+		uint8_t retval = rdx::hexToDec_8(subStr);
 
-	return retval;
+		memlay.m_packet[index] = retval;
+		index++;
+		m_ramLocation++;
+
+	}	
 }
 
 PacketAdrPReg Parser::getAdr_P_RegPart(std::string& operand)
@@ -915,7 +923,6 @@ void Parser::parseLOAD()
 		return;
 	}
 
-	
 	uint8_t opcode = m_opcodeHexTable[asmc::TokenType::LOAD];
 
 	moveCurrentToken();
@@ -934,11 +941,6 @@ void Parser::parseLOAD()
 
 	MemoryLayout memlay;
 
-	int index = 0;
-
-
-	memlay.m_opcode = opcode;
-	memlay.m_regPart = registerPart;
 	//REG_8  => 0  1
 	//REG_16 => 1  2
 	//REG_32 => 3  4
@@ -948,23 +950,30 @@ void Parser::parseLOAD()
 	//regPart
 	m_ramLocation++;
 
+	memlay.m_packet = new uint8_t[regType + 1];
+
 	switch (m_currentToken.m_type)
 	{
-	case asmc::TokenType::HEXNUMBER:		
-		registerPart = asmc_CombineRegUz(registerPart, regType);	
+		//load rx,sayi
+		case asmc::TokenType::HEXNUMBER:		
 
-		memlay.m_packet = new uint8_t[regType + 1];
-				
-		for (size_t i = 0; i < (regType + 1) * 2; i += 2)
-		{
-			memlay.m_packet[index] = convertToBytes(m_currentToken.m_text, i, regType);
-			index++;
-			m_ramLocation++;
-			
-		}
+			registerPart <<= 3;
+			registerPart = asmc_CombineRegUz(registerPart, regType);	
+						
+			convertToBytes(m_currentToken.m_text, regType, memlay);
+
+		break;
+
+		//load rx,@ry
+		case asmc::TokenType::REGADR:
+
+			registerPart = asmc_CombineRegUz(registerPart, regType);
 
 		break;
 	}
+
+	memlay.m_opcode = opcode;
+	memlay.m_regPart = registerPart;
 
 	m_ramLocation++;
 	m_output.push_back(memlay);

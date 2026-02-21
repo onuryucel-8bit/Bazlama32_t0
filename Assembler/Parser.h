@@ -26,16 +26,15 @@
 //ozel bitler
 
 //TODO enum ?
-#define asmc_MOD_Empty 0
-#define asmc_MOD_Number 1
+#define asmc_MOD_Number 0
+//@ry
+#define asmc_MOD_RegAdr 1
 //@adr
 #define asmc_MOD_Adr 2
-//@ry
-#define asmc_MOD_RegAdr 3
 //@adr + ry
-#define asmc_MOD_Adr_P_Reg 4
+#define asmc_MOD_Adr_P_Reg 3
 //rx, ry
-#define asmc_MOD_Rx_Ry 5
+#define asmc_MOD_Rx_Ry 1
 
 #define asmc_CombineMODBits(opcode, modBits) ((uint32_t)opcode | ((uint32_t)modBits << 15))
 
@@ -87,7 +86,7 @@ namespace asmc
 
 		MemoryLayout parseOperand(uint32_t opcode);
 
-		uint8_t convertToBytes(std::string& text, uint8_t index, asmc::UzTip regtype);
+		void convertToBytes(std::string& text, asmc::UzTip regtype, asmc::MemoryLayout& memlay);
 
 		PacketAdrPReg getAdr_P_RegPart(std::string& operand);
 

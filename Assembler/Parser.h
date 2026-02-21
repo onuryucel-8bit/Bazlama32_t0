@@ -36,6 +36,8 @@
 //rx, ry
 #define asmc_MOD_Rx_Ry 1
 
+
+
 #define asmc_CombineMODBits(opcode, modBits) ((uint32_t)opcode | ((uint32_t)modBits << 15))
 
 //TODO remove
@@ -93,8 +95,8 @@ namespace asmc
 		PacketAdrPReg getAdr_P_RegPart(std::string& operand);
 
 	#ifdef PARSER_TEST_FUNCS
-		asmc::TokenType toToken(size_t opcode);
-		void printBinHex(std::bitset<32> opcode, std::bitset<32> operand);
+		asmc::TokenType toToken(uint8_t opcode);
+		void printBinHex(asmc::MemoryLayout& memlay);
 		void printCurrentPeekToken();
 	#endif // PARSER_TEST_FUNCS
 

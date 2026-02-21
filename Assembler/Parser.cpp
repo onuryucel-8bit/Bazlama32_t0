@@ -408,7 +408,9 @@ asmc::TokenType Parser::toToken(uint8_t opcode)
 				return asmc::TokenType::NOP;
 			// REG - RAM
 			case 0x1:  
-			case 0x11:  
+			case 0x11:
+			case 0x21:
+			case 0x31:
 				return asmc::TokenType::LOAD;
 
 			//case 0x2:  return asmc::TokenType::STR;
@@ -451,8 +453,7 @@ asmc::TokenType Parser::toToken(uint8_t opcode)
 }
 
 void Parser::printBinHex(asmc::MemoryLayout& memlay)
-{
-	//std::cout << rang::fg::blue << "RREEEEEE\n" << rang::style::reset;
+{	
 	std::bitset<8> opcode = memlay.m_opcode;
 	std::bitset<8> regPart = memlay.m_regPart;
 	//TODO use log lib
@@ -976,7 +977,6 @@ void Parser::parseLOAD()
 	//regPart
 	m_ramLocation++;
 	
-	
 
 	switch (m_currentToken.m_type)
 	{
@@ -1006,6 +1006,10 @@ void Parser::parseLOAD()
 
 			//00xx_x000
 			registerPart = asmc_CombineRegA(registerPart);
+
+			//uuxx_x000
+			registerPart = asmc_CombineRegUz(registerPart, asmc::UzTip::REG_32);
+
 			//ry
 			registerPart = registerPart | rdx::hexToDec8(m_currentToken.m_text);
 
@@ -1013,6 +1017,48 @@ void Parser::parseLOAD()
 
 		break;
 
+		//load rx, @adr
+		case asmc::TokenType::ADDRESS:
+			memlay.m_opcode = memlay.m_opcode | (asmc_MOD_Adr << 4);
+
+			//4byte adr
+			memlay.m_packetSize = 4;
+			memlay.m_packet = new uint8_t[4];
+
+			//00xx_x000
+			registerPart = asmc_CombineRegA(registerPart);
+
+			//uuxx_x000
+			registerPart = asmc_CombineRegUz(registerPart, asmc::UzTip::REG_32);
+
+			convertToBytes(m_currentToken.m_text, asmc::UzTip::REG_32, memlay);
+
+		break;
+		
+		//load rx, @adr + ry
+		case asmc::TokenType::ADR_P_REG:
+		{
+			memlay.m_opcode = memlay.m_opcode | (asmc_MOD_Adr_P_Reg << 4);
+
+			memlay.m_packetSize = 4;
+			memlay.m_packet = new uint8_t[4];
+
+			//00xx_x000
+			registerPart = asmc_CombineRegA(registerPart);
+
+			//uuxx_x000
+			registerPart = asmc_CombineRegUz(registerPart, asmc::UzTip::REG_32);
+
+			asmc::PacketAdrPReg padrpreg = getAdr_P_RegPart(m_currentToken.m_text);
+			
+			registerPart = asmc_CombineRegB(registerPart, (uint8_t)padrpreg.m_regPart);
+
+			//TODO dokumana bak string_view substr() varmi?
+			std::string adr = rdx::decToHex(padrpreg.m_adrPart);
+
+			convertToBytes(adr, asmc::UzTip::REG_32, memlay);
+		}
+		break;
 
 	}
 

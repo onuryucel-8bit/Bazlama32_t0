@@ -49,8 +49,8 @@
 #define asmc_CombineRegA(regPart) \
 	(regPart) << asmc_ShiftAmount_RegA
 
-#define asmc_CombineRegB(regPart) \
-	(regPart) << asmc_ShiftAmount_RegB
+#define asmc_CombineRegB(regPart, ry) \
+	(regPart) | (ry) << asmc_ShiftAmount_RegB
 
 #define asmc_CombineRegUz(regPart, uz) \
 	(regPart) | ( (uz) << 6 )

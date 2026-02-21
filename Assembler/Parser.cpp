@@ -699,7 +699,7 @@ void Parser::convertToBytes(std::string& text, asmc::UzTip regtype, asmc::Memory
 	{
 		std::string subStr = text.substr(i, 2);
 
-		uint8_t retval = rdx::hexToDec_8(subStr);
+		uint8_t retval = rdx::hexToDec8(subStr);
 
 		memlay.m_packet[index] = retval;
 		index++;
@@ -928,9 +928,9 @@ void Parser::parseLOAD()
 	moveCurrentToken();
 	
 	asmc::UzTip regType = m_currentToken.m_regType;
-	uint8_t registerPart = rdx::hexToDec(m_currentToken.m_text);
+	uint8_t rx = rdx::hexToDec(m_currentToken.m_text);
 
-	if (registerPart > 7)
+	if (rx > 7)
 	{
 		printError("Register(s) must be in range [0-7]");
 	}
@@ -944,21 +944,27 @@ void Parser::parseLOAD()
 	//REG_8  => 0  1
 	//REG_16 => 1  2
 	//REG_32 => 3  4
-	memlay.m_packetSize = regType + 1;
+	
 	memlay.m_ramIndex = m_ramLocation;
 
 	//regPart
 	m_ramLocation++;
-
-	memlay.m_packet = new uint8_t[regType + 1];
+	
+	uint8_t registerPart = 0;
 
 	switch (m_currentToken.m_type)
 	{
 		//load rx,sayi
 		case asmc::TokenType::HEXNUMBER:		
 
-			registerPart <<= 3;
-			registerPart = asmc_CombineRegUz(registerPart, regType);	
+			memlay.m_packetSize = regType + 1;
+
+			memlay.m_packet = new uint8_t[regType + 1];
+
+			//00xx_x000
+			registerPart = asmc_CombineRegA(rx);
+			//uu00_0000
+			registerPart = asmc_CombineRegUz(rx, regType);
 						
 			convertToBytes(m_currentToken.m_text, regType, memlay);
 
@@ -967,7 +973,14 @@ void Parser::parseLOAD()
 		//load rx,@ry
 		case asmc::TokenType::REGADR:
 
-			registerPart = asmc_CombineRegUz(registerPart, regType);
+			memlay.m_packetSize = 0;
+
+			//00xx_x000
+			registerPart = asmc_CombineRegA(rx);
+			//ry
+			registerPart = registerPart | rdx::hexToDec8(m_currentToken.m_text);
+
+			registerPart = registerPart | asmc_CombineRegUz(registerPart, regType);
 
 		break;
 	}

@@ -269,6 +269,7 @@ asmc::Token Lexer::lexSingleChar()
 	std::string tokenStr;
 	size_t length = 1;
 	size_t startPos = 0;
+	
 	 
 	switch (m_currentChar)
 	{
@@ -291,6 +292,7 @@ asmc::Token Lexer::lexSingleChar()
 		if (m_currentChar == 'r')
 		{
 			nextChar();
+			
 			token = { std::string(1, m_currentChar), asmc::TokenType::REGADR, asmc::UzTip::REG_8, m_lineNumber};
 		}
 		else

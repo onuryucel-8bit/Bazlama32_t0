@@ -38,19 +38,21 @@
 
 #define asmc_CombineMODBits(opcode, modBits) ((uint32_t)opcode | ((uint32_t)modBits << 15))
 
+//TODO remove
 #define asmc_ShiftAmount_Opcode 24
 
-#define asmc_ShiftAmount_RegA 21
-#define asmc_ShiftAmount_RegB 18
+#define asmc_ShiftAmount_RegA 3
+#define asmc_ShiftAmount_RegB 0
 
-#define asmc_CombineRegA(opcode, rega) \
-	((opcode) | ((rega) << asmc_ShiftAmount_RegA))
+#define asmc_CombineRegA(regPart) \
+	(regPart) << asmc_ShiftAmount_RegA
 
-#define asmc_CombineRegB(opcode, regb) \
-	((opcode) | ((regb) << asmc_ShiftAmount_RegB))
+#define asmc_CombineRegB(regPart) \
+	(regPart) << asmc_ShiftAmount_RegB
 
 #define asmc_CombineRegUz(regPart, uz) \
 	(regPart) | ( (uz) << 6 )
+
 
 namespace asmc
 {

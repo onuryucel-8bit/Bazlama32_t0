@@ -89,7 +89,7 @@ namespace rdx {
         return (uint32_t)(dec);
     }
 
-    inline uint8_t hexToDec_8(std::string hex)
+    inline uint8_t hexToDec8(std::string hex)
     {
         unsigned int dec = std::stoul(hex, nullptr, 16);
 

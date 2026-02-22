@@ -1,7 +1,7 @@
 #pragma once
 
 //TODO pch ekle
-#include "LexerPCH.h"
+
 
 #include "../LibsLocal/magic_enum/magic_enum.hpp"
 #include "../libsLocal/rang.hpp"

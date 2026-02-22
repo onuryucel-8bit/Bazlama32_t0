@@ -1,9 +1,5 @@
 #pragma once
 
-#include <iostream>
-#include <cstdint>
-#include <unordered_map>
-
 //TEST DEBUG
 #include <bitset>
 #include <fstream>
@@ -13,6 +9,7 @@
 #include "../libsLocal/magic_enum/magic_enum.hpp"
 
 #include "Lexer.h"
+#include "Disassembler.h"
 
 #include "Common.h"
 
@@ -29,6 +26,8 @@
 #define asmc_MOD_Number 0
 //@ry
 #define asmc_MOD_RegAdr 1
+//rx => STR
+#define asmc_MOD_Rx 2
 //@adr
 #define asmc_MOD_Adr 2
 //@adr + ry
@@ -36,9 +35,14 @@
 //rx, ry
 #define asmc_MOD_Rx_Ry 1
 
+//4byte => 32 bit
+#define asmc_WORD 4
 
+#define asmc_CombineModBits(opcode, modBits) \
+	(opcode | (modBits << 4))
 
-#define asmc_CombineMODBits(opcode, modBits) ((uint32_t)opcode | ((uint32_t)modBits << 15))
+#define asmc_CombineModBits_t0(opcode, modBits) \
+	(m_opcodeHexTable[opcode]) + (modBits << 4)
 
 //TODO remove
 #define asmc_ShiftAmount_Opcode 24
@@ -90,7 +94,7 @@ namespace asmc
 
 		MemoryLayout parseOperand(uint32_t opcode);
 
-		void convertToBytes(std::string& text, asmc::UzTip regtype, asmc::MemoryLayout& memlay);
+		void convertToBytes(std::string& text, asmc::UzTip regtype, uint8_t* packet);
 
 		PacketAdrPReg getAdr_P_RegPart(std::string& operand);
 
@@ -104,6 +108,7 @@ namespace asmc
 		int m_lineNumber;
 
 		asmc::Lexer& m_lexer;
+		asmc::Disassembler m_disassembler;
 
 		asmc::Token m_currentToken;
 		asmc::Token m_peekToken;
@@ -111,7 +116,7 @@ namespace asmc
 		std::unordered_map<asmc::Token, asmc::Symbol> m_symbolTable;
 		std::unordered_map<asmc::Token, std::vector<asmc::UnresolvedEntry>> m_unresolvedTable;
 
-		std::unordered_map<asmc::TokenType, uint32_t> m_opcodeHexTable;
+		std::unordered_map<asmc::TokenType, uint8_t> m_opcodeHexTable;
 
 		std::vector<asmc::MemoryLayout> m_output;
 

@@ -89,8 +89,13 @@ namespace asmc
 
 		//TODO !!MEMORY LEAK!! add delete
 		uint8_t* m_packet = nullptr;
+		uint8_t m_packetSize = 0;
+		//starting of the ram location
 		int m_ramIndex = -1;
-		char m_packetSize = 0;
+
+		//TODO !!MEMORY LEAK!! add delete
+		uint8_t* m_reservedPacket = nullptr;
+		uint8_t  m_resPacketSize = 0;
 	};
 
 	struct Symbol

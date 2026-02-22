@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Lexer.h"
 namespace asmc 
 {
@@ -69,22 +70,8 @@ Token Lexer::getToken()
 	}
 	//Register,[keyword,label] check
 	else if (std::isalpha(m_currentChar))
-	{
-		//Register?
-		//isdigit() checks next char is it number
-		if (m_currentChar == 'r' && (
-			peek() == 's' || 
-			peek() == 'a' ||
-			peek() == 'o')
-		)
-		{
-			token = lexRegPart();
-		}
-		//keyword,label
-		else
-		{
-			token = lexWord();
-		}		
+	{				
+		token = lexWord();		
 	}
 	//number check
 	else if (std::isdigit(m_currentChar))
@@ -191,13 +178,20 @@ asmc::Token Lexer::lexRegPart()
 {	
 	asmc::Token token;
 
+	//skip '$'
+	nextChar();
+
 	//input rs,ra,ro
 	//skip 'r' part
 	nextChar();			
 
-	
+	char regType = m_currentChar;
 
-	char regType = m_currentChar;	
+	if (regType != 's' && regType != 'a' && regType != 'o')
+	{
+		printError("Invalid register type");
+		return token;
+	}
 	
 	nextChar();
 	
@@ -279,6 +273,11 @@ asmc::Token Lexer::lexSingleChar()
 		token = { std::string(1,m_currentChar), asmc::TokenType::NEWLINE };
 		break;
 
+	case '$':
+		//Register		
+		token = lexRegPart();		
+		break;
+
 	//ADDRESS
 		//regadr => @r0, @r3
 		//TODO check
@@ -297,9 +296,26 @@ asmc::Token Lexer::lexSingleChar()
 		}
 		else
 		{
-			
-			tokenStr = getSubStr(m_position, 1);
-			
+			startPos = m_position;
+
+			while (std::isxdigit(peek()))
+			{
+				nextChar();
+				length++;
+
+				if (peek() == '\'')
+				{
+					tokenStr = m_program.substr(startPos, length);
+					nextChar();
+
+					//ignore '\'' => m_position + 1
+					startPos = m_position + 1;
+					length = 1;
+				}
+			}
+			//ignore '\n' => length - 1
+			tokenStr += m_program.substr(startPos, length - 1);
+					
 			nextChar();//move cursor to '+' or ' '
 			
 			skipWhiteSpace();
@@ -690,7 +706,7 @@ void Lexer::printError(std::string message)
 	std::cout << rang::fg::cyan
 		<< "*****************************\n"
 		<< "ERROR::Lexer::" << message		
-		<< "current char[" << ((m_currentChar == '\n') ? "/n" : std::string(1, m_currentChar)) << "] "
+		<< " current char[" << ((m_currentChar == '\n') ? "/n" : std::string(1, m_currentChar)) << "] "
 		<< "current pos [" << std::to_string(m_position) << "] "
 		<< "line number [" << m_lineNumber <<"]\n"
 		<< "*****************************\n"

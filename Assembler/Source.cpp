@@ -1,4 +1,4 @@
-#include "LexerPCH.h"
+#include "pch.h"
 
 #include "Lexer.h"
 
@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
 
 #ifdef _DEBUG		
 		std::cout << "Loading default main.asm\n";
-		path = "main.asm";
+		path = "../test.asm";
 #else
 		return 0;
 #endif // DEBUG_FILE

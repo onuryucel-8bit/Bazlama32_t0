@@ -79,6 +79,11 @@ namespace rdx {
         return std::string();
     }
 
+    inline uint8_t binToInt8(std::string bin)
+    {
+        return (uint8_t)(std::stoi(bin, nullptr, 2));
+    }
+
     inline uint32_t hexToDec(std::string hex)
     {
 

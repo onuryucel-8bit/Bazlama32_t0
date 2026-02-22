@@ -1,6 +1,5 @@
 Assembler/*.txt
 Assembler/*.cmake
-Assembler/*.asm
 Assembler/build/*
 Compiler_t2/*.bc
 Compiler_t2/build/*

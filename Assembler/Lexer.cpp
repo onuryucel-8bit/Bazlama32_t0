@@ -242,15 +242,31 @@ asmc::Token Lexer::lexHexNumberPart()
 	//get ff part
 	//-----------------------//
 	size_t length = 1;
-	size_t startpos = m_position;
+	size_t startPos = m_position;
 
-	while (std::isxdigit(peek()))
-	{		
-		nextChar();		
-		length++;	
+	std::string tokenStr;
+
+	while (std::isxdigit(m_currentChar))
+	{
+		nextChar();
+		length++;
+
+		if (peek() == '\'')
+		{
+			tokenStr = m_program.substr(startPos, length);
+			//m_currentChar => '\''
+			nextChar();
+			//skip '\''
+			nextChar();
+
+			startPos = m_position;
+
+			length = 1;
+		}
 	}
+	//ignore '\n' => length - 1
+	tokenStr += m_program.substr(startPos, length - 1);
 
-	std::string tokenStr = m_program.substr(startpos, length);
 	//-----------------------//
 
 	return token = {tokenStr, asmc::TokenType::HEXNUMBER, asmc::UzTip::REG_8, m_lineNumber };
@@ -298,7 +314,7 @@ asmc::Token Lexer::lexSingleChar()
 		{
 			startPos = m_position;
 
-			while (std::isxdigit(peek()))
+			while (std::isxdigit(m_currentChar))
 			{
 				nextChar();
 				length++;
@@ -306,17 +322,18 @@ asmc::Token Lexer::lexSingleChar()
 				if (peek() == '\'')
 				{
 					tokenStr = m_program.substr(startPos, length);
+					//m_currentChar => '\''
 					nextChar();
+					//skip '\''
+					nextChar();
+					
+					startPos = m_position;
 
-					//ignore '\'' => m_position + 1
-					startPos = m_position + 1;
 					length = 1;
 				}
 			}
 			//ignore '\n' => length - 1
-			tokenStr += m_program.substr(startPos, length - 1);
-					
-			nextChar();//move cursor to '+' or ' '
+			tokenStr += m_program.substr(startPos, length - 1);								
 			
 			skipWhiteSpace();
 

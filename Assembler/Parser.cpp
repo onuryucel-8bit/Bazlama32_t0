@@ -86,8 +86,8 @@ Parser::Parser(asmc::Lexer& lexer)
 	//STACK 
 	m_opcodeHexTable[asmc::TokenType::CALL] = 0x04;
 	m_opcodeHexTable[asmc::TokenType::RET] =  0x14;
-	m_opcodeHexTable[asmc::TokenType::PUSH] = 0x44;
-	m_opcodeHexTable[asmc::TokenType::POP] =  0x74;
+	m_opcodeHexTable[asmc::TokenType::PUSH] = 0x24;
+	m_opcodeHexTable[asmc::TokenType::POP] =  0x34;
 
 	//int	
 	m_opcodeHexTable[asmc::TokenType::KWAIT] = 0x09;
@@ -1472,34 +1472,26 @@ void Parser::parseCMP()
 
 void Parser::parsePUSH()
 {
-	uint32_t opcode = m_opcodeHexTable[asmc::TokenType::PUSH] << asmc_ShiftAmount_Opcode;
+	if (m_peekToken.m_type != asmc::TokenType::REGISTER)
+	{
+		printError("unexpected operand");
+	}
 
-	moveCurrentToken();
-	
-	uint32_t rx;
 	MemoryLayout memlay;
 
-	opcode = opcode | (0b111 << asmc_ShiftAmount_RegA);
+	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::PUSH];
+	memlay.m_ramIndex = m_ramLocation;
+	m_ramLocation++;
 
-	switch (m_currentToken.m_type)
-	{
-	case asmc::TokenType::REGISTER:
+	moveCurrentToken();
+	//------------//
+	uint8_t reguz = m_currentToken.m_regType;
+	uint8_t rega = rdx::hexToDec8(m_currentToken.m_text);
+	memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, reguz, rega, 0);
+	m_ramLocation++;
+	//------------//
 
-			rx = rdx::hexToDec(m_currentToken.m_text);
 
-			opcode = opcode | (rx << asmc_ShiftAmount_RegB);
-			
-			opcode = asmc_CombineModBits(opcode, asmc_MOD_Number);
-
-			memlay.m_opcode = opcode;
-			memlay.m_ramIndex = m_ramLocation;
-			m_ramLocation += 1;			
-		break;	
-
-	default:
-			printError("expected register for second operand [PUSH (rx)!]");
-		break;
-	}
 
 	m_output.push_back(memlay);
 
@@ -1508,21 +1500,28 @@ void Parser::parsePUSH()
 
 void Parser::parsePOP()
 {
-	uint8_t opcode = m_opcodeHexTable[asmc::TokenType::POP];
-
-	opcode |= 0b111 << asmc_ShiftAmount_RegA;
-
-
-	/*MemoryLayout memlay 
+	if (m_peekToken.m_type != asmc::TokenType::REGISTER)
 	{
-		.m_opcode = opcode,
-		.m_ramIndex = m_ramLocation,
-		.m_packetSize = 1
-	};	*/
+		printError("unexpected operand");
+	}
 
-	m_ramLocation += 1;
+	MemoryLayout memlay;
+		
+	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::POP];
+	memlay.m_ramIndex = m_ramLocation;
+	m_ramLocation++;
 
-	//m_output.push_back(memlay);
+	moveCurrentToken();
+	//------------//
+	uint8_t reguz = m_currentToken.m_regType;
+	uint8_t rega = rdx::hexToDec8(m_currentToken.m_text);
+	memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, reguz, rega, 0);
+	m_ramLocation++;
+	//------------//
+
+	
+
+	m_output.push_back(memlay);
 	
 }
 

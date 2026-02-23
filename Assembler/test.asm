@@ -97,5 +97,11 @@ xor $rs1, $rs2
 
 not $rs1
 
+pop $rs1
+pop $ra1
+pop $ro1
+
+push $rs1
+push $ra1
+push $ro1
 */
-	

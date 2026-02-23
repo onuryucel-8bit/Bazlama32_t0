@@ -33,7 +33,7 @@
 //@adr + ry
 #define asmc_MOD_Adr_P_Reg 3
 //rx, ry
-#define asmc_MOD_Rx_Ry 1
+#define asmc_MOD_Rx_Ry 3
 
 //4byte => 32 bit
 #define asmc_WORD 4
@@ -43,6 +43,9 @@
 
 #define asmc_CombineModBits_t0(opcode, modBits) \
 	(m_opcodeHexTable[opcode]) + (modBits << 4)
+
+#define asmc_CombineRegPart_t0(regPart, reguz, rega, regb) \
+	regPart | ((reguz << 6) | (rega << 3) | regb)
 
 //TODO remove
 #define asmc_ShiftAmount_Opcode 24
@@ -92,7 +95,7 @@ namespace asmc
 
 		void writeOutput();
 
-		MemoryLayout parseOperand(uint32_t opcode);
+		asmc::MemoryLayout parseOperand(asmc::TokenType type);
 
 		void convertToBytes(std::string& text, asmc::UzTip regtype, uint8_t* packet);
 

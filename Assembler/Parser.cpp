@@ -79,16 +79,15 @@ Parser::Parser(asmc::Lexer& lexer)
 	m_opcodeHexTable[asmc::TokenType::NOP] = 0x00;
 
 	//REG-RAM
-	m_opcodeHexTable[asmc::TokenType::LOAD] = 0x01;		//+
-	m_opcodeHexTable[asmc::TokenType::STR] = 0x10;
-
-	m_opcodeHexTable[asmc::TokenType::MOV] = 0x08;
+	m_opcodeHexTable[asmc::TokenType::LOAD] = 0x01;
+	m_opcodeHexTable[asmc::TokenType::STR] =  0x10;		
+	m_opcodeHexTable[asmc::TokenType::MOV] =  0x41;
 
 	//STACK 
-	m_opcodeHexTable[asmc::TokenType::CALL] = 0x03;
-	m_opcodeHexTable[asmc::TokenType::RET] = 0x04;
-	m_opcodeHexTable[asmc::TokenType::PUSH] = 0x5;
-	m_opcodeHexTable[asmc::TokenType::POP] = 0x06;
+	m_opcodeHexTable[asmc::TokenType::CALL] = 0x04;
+	m_opcodeHexTable[asmc::TokenType::RET] =  0x14;
+	m_opcodeHexTable[asmc::TokenType::PUSH] = 0x44;
+	m_opcodeHexTable[asmc::TokenType::POP] =  0x74;
 
 	//int	
 	m_opcodeHexTable[asmc::TokenType::KWAIT] = 0x09;
@@ -96,27 +95,27 @@ Parser::Parser(asmc::Lexer& lexer)
 	m_opcodeHexTable[asmc::TokenType::MR] = 0x0B;
 
 	//ALU
-	m_opcodeHexTable[asmc::TokenType::ADD] = 0x10;
-	m_opcodeHexTable[asmc::TokenType::SUB] = 0x11;
-	m_opcodeHexTable[asmc::TokenType::MUL] = 0x12;
-	m_opcodeHexTable[asmc::TokenType::DIV] = 0x13;
+	m_opcodeHexTable[asmc::TokenType::ADD] = 0x02;
+	m_opcodeHexTable[asmc::TokenType::SUB] = 0x42;
+	m_opcodeHexTable[asmc::TokenType::MUL] = 0x82;
+	m_opcodeHexTable[asmc::TokenType::DIV] = 0xc2;
 
-	m_opcodeHexTable[asmc::TokenType::AND] = 0x14;
-	m_opcodeHexTable[asmc::TokenType::OR] = 0x15;
-	m_opcodeHexTable[asmc::TokenType::XOR] = 0x16;
-	m_opcodeHexTable[asmc::TokenType::NOT] = 0x17;
+	m_opcodeHexTable[asmc::TokenType::AND] = 0x43;
+	m_opcodeHexTable[asmc::TokenType::OR] =  0x63;
+	m_opcodeHexTable[asmc::TokenType::XOR] = 0x73;
+	m_opcodeHexTable[asmc::TokenType::NOT] = 0x53;
 
-	m_opcodeHexTable[asmc::TokenType::SHL] = 0x19;
-	m_opcodeHexTable[asmc::TokenType::SHR] = 0x1A;
+	m_opcodeHexTable[asmc::TokenType::SHL] = 0x03;
+	m_opcodeHexTable[asmc::TokenType::SHR] = 0x33;
 			
-	m_opcodeHexTable[asmc::TokenType::CMP] = 0x18;
+	m_opcodeHexTable[asmc::TokenType::CMP] = 0x83;
 
 	//JUMP
-	m_opcodeHexTable[asmc::TokenType::JMP] = 0x1B;
-	m_opcodeHexTable[asmc::TokenType::JNE] = 0x1C;
-	m_opcodeHexTable[asmc::TokenType::JE] = 0x1D;
-	m_opcodeHexTable[asmc::TokenType::JG] = 0x1E;
-	m_opcodeHexTable[asmc::TokenType::JL] = 0x1F;	
+	m_opcodeHexTable[asmc::TokenType::JMP] = 0x50;
+	m_opcodeHexTable[asmc::TokenType::JNE] = 0x60;
+	m_opcodeHexTable[asmc::TokenType::JE] = 0x70;
+	m_opcodeHexTable[asmc::TokenType::JG] = 0x80;
+	m_opcodeHexTable[asmc::TokenType::JL] = 0x90;	
 #pragma endregion
 
 }
@@ -276,8 +275,13 @@ void Parser::writeOutput()
 			file << ramIndex << " " << (int)m_output[i].m_opcode << "\n";
 			ramIndex++;
 
-			file << ramIndex << " " << (int)m_output[i].m_regPart << "\n";
-			ramIndex++;
+			//dont print reg part str @adr,sayi
+			if (m_output[i].m_opcode != 0x10)
+			{
+				file << ramIndex << " " << (int)m_output[i].m_regPart << "\n";
+				ramIndex++;
+			}
+			
 			
 			for (size_t j = 0; j < m_output[i].m_packetSize; j++)
 			{
@@ -430,6 +434,13 @@ asmc::TokenType Parser::toToken(uint8_t opcode)
 			case 0x30:
 			case 0x40:
 				return asmc::TokenType::STR;
+
+			case 0x02:
+			case 0x12:
+			case 0x22:
+			case 0x32:
+				return asmc::TokenType::ADD;
+
 			//case 0x8:  return asmc::TokenType::MOV;
 
 			//// STACK
@@ -600,135 +611,82 @@ void Parser::moveCurrentToken()
 	m_peekToken = m_tokenList[m_tokenIndex];
 }
 
-MemoryLayout Parser::parseOperand(uint32_t opcode)
-{
-	MemoryLayout memlay;	
+asmc::MemoryLayout Parser::parseOperand(asmc::TokenType type)
+{	
+	asmc::MemoryLayout memlay;
 
-	uint32_t rx;
+	memlay.m_ramIndex = m_ramLocation;
+	m_ramLocation++;
 
+	moveCurrentToken();
+	uint8_t rega, regb, opcode;
+
+	asmc::UzTip regType = m_currentToken.m_regType;
+	rega = rdx::hexToDec8(m_currentToken.m_text);
+	m_ramLocation++;
+
+	moveCurrentToken();
 	switch (m_currentToken.m_type)
-	{		
-
-	case asmc::TokenType::ID:
-
-		if (m_symbolTable.contains(m_currentToken))
-		{
-			opcode = asmc_CombineModBits(opcode, asmc_MOD_Number);
-			memlay.m_secondPart = m_symbolTable[m_currentToken].m_ramIndex;
-
-			memlay.m_ramIndex = m_ramLocation;
-			memlay.m_packetSize = 2; 
-			m_ramLocation += 2;
-		}
-		else
-		{
-			printError("undefined macro used");
-		}
-			
-		break;
-	case asmc::TokenType::DECIMAL:
+	{
 	case asmc::TokenType::HEXNUMBER:
-			
-			opcode = asmc_CombineModBits(opcode, asmc_MOD_Number);
+		memlay.m_opcode = asmc_CombineModBits_t0(type, asmc_MOD_Number);
 
-			if (m_currentToken.m_type == asmc::TokenType::DECIMAL)
-			{
-				try
-				{
-					memlay.m_secondPart = (uint32_t)std::stoi(m_currentToken.m_text);
-				}
-				catch(const std::out_of_range)
-				{
-					printError("decimal value larger than a 32-bit range");
-				}
-			}
-			else
-			{
-				if (m_currentToken.m_text.length() > 8)
-				{
-					m_currentToken.m_text = "0";
-					printError("hex value is larger than a 32-bit range");
-				}
-				memlay.m_secondPart = rdx::hexToDec(m_currentToken.m_text);
-			}
+		//------/
+		
+		memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, regType, rega, 0);
+		//------/
+		
+		memlay.m_packetSize = regType + 1;
+		memlay.m_packet = new uint8_t[regType + 1];
 
-			memlay.m_ramIndex = m_ramLocation;
-			memlay.m_packetSize = 2;
-			m_ramLocation += 2;
+		convertToBytes(m_currentToken.m_text, regType, memlay.m_packet);
+
 		break;
 
 	case asmc::TokenType::REGISTER:
+		memlay.m_opcode = asmc_CombineModBits_t0(type, asmc_MOD_Rx_Ry);
+		
+		//TODO dynamic regtype add $rs1, $ra2 1byte + 2byte => r1
+		//------/
+		regb = rdx::hexToDec8(m_currentToken.m_text);
+		memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, asmc::UzTip::REG_32, rega, regb);
+		//------/
 
-			rx = opcode & 0x00ff'0000;//get rx part
-			opcode = opcode & 0xff00'0000; //clear regx part
-
-			opcode = opcode | (rx << 3);//shift rx part to left
-
-			opcode = opcode | (rdx::hexToDec(m_currentToken.m_text) << asmc_ShiftAmount_RegB);//shift ry part to left
-
-			opcode = asmc_CombineModBits(opcode, asmc_MOD_Rx_Ry);
-
-			memlay.m_ramIndex = m_ramLocation;
-			memlay.m_packetSize = 1;
-			m_ramLocation += 1;
 		break;
 
 	case asmc::TokenType::ADDRESS:
+		memlay.m_opcode = asmc_CombineModBits_t0(type, asmc_MOD_Adr);
 
-			opcode = asmc_CombineModBits(opcode, asmc_MOD_Adr);
+		//TODO dynamic regtype add $rs1, $ra2 1byte + 2byte => r1
+		//------/		
+		memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, asmc::UzTip::REG_32, rega, 0);
+		m_ramLocation++;
+		//------/
 
-			memlay.m_secondPart = rdx::hexToDec(m_currentToken.m_text);
-			memlay.m_ramIndex = m_ramLocation;
+		memlay.m_packetSize = asmc::UzTip::REG_32 + 1;
+		memlay.m_packet = new uint8_t[asmc::UzTip::REG_32 + 1];
 
-			memlay.m_ramIndex = m_ramLocation;
-			memlay.m_packetSize = 2;
-			m_ramLocation += 2;
+		convertToBytes(m_currentToken.m_text, asmc::UzTip::REG_32, memlay.m_packet);
+
 		break;
 
-	case asmc::TokenType::REGADR:	
+	case asmc::TokenType::REGADR:
+		memlay.m_opcode = asmc_CombineModBits_t0(type, asmc_MOD_RegAdr);
 
-			rx = opcode & 0x00ff'0000;//get rx part
-			opcode = opcode & 0xff00'0000; //clear regx part
+		//------/	
+		regb = rdx::hexToDec8(m_currentToken.m_text);	
+		memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, asmc::UzTip::REG_32, rega, regb);
+		m_ramLocation++;
+		//------/
 
-			opcode = opcode | (rx << 3);//shift rx part to left
-
-			opcode = opcode | (rdx::hexToDec(m_currentToken.m_text) << asmc_ShiftAmount_RegB);//shift ry part to left
-			
-			opcode = asmc_CombineModBits(opcode, asmc_MOD_RegAdr);
-
-			memlay.m_ramIndex = m_ramLocation;
-			memlay.m_packetSize = 1;
-			m_ramLocation += 1;
 		break;
-
-	case asmc::TokenType::ADR_P_REG:
-			
-			PacketAdrPReg packet = getAdr_P_RegPart(m_currentToken.m_text);
-
-			//insert reg ry
-			rx = opcode & 0x00ff'0000;//get rx part
-			opcode = opcode & 0xff00'0000;//clear regx part
-			
-			opcode = opcode | (rx << 3);//shift rx part to left
-
-			opcode = opcode | (packet.m_regPart << asmc_ShiftAmount_RegB);//shift ry part to left 
-		
-			opcode = asmc_CombineModBits(opcode, asmc_MOD_Adr_P_Reg);
-
-			memlay.m_secondPart = packet.m_adrPart;
-			memlay.m_ramIndex = m_ramLocation;
-			memlay.m_packetSize = 2;
-			m_ramLocation += 2;
-		break;
-	}	
-
-	memlay.m_opcode = opcode;
+	}
 
 	return memlay;
 }
 
 void Parser::convertToBytes(std::string& text, asmc::UzTip regtype, uint8_t* packet)
-{
+{	
 	if (text.length() > 8)
 	{
 		printError("hex number out of range of 32bit value");
@@ -756,6 +714,7 @@ void Parser::convertToBytes(std::string& text, asmc::UzTip regtype, uint8_t* pac
 		m_ramLocation++;
 
 	}	
+
 }
 
 PacketAdrPReg Parser::getAdr_P_RegPart(std::string& operand)
@@ -996,22 +955,23 @@ void Parser::parseLOAD()
 	
 	//regPart
 	m_ramLocation++;
-	
+	uint8_t rega, regb, reguz;
 
 	switch (m_currentToken.m_type)
 	{
 		//load rx,sayi
-		case asmc::TokenType::HEXNUMBER:		
+		case asmc::TokenType::HEXNUMBER:	
 
+			//----------//
+			rega = registerPart;
+			reguz = regType;
+			//----------//
+
+			memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, reguz, rega, 0);								
+									
 			memlay.m_packetSize = regType + 1;
-
 			memlay.m_packet = new uint8_t[regType + 1];
 
-			//00xx_x000
-			registerPart = asmc_CombineRegA(registerPart);
-			//uuxx_x000
-			registerPart = asmc_CombineRegUz(registerPart, regType);
-						
 			convertToBytes(m_currentToken.m_text, regType, memlay.m_packet);
 
 		break;
@@ -1019,38 +979,36 @@ void Parser::parseLOAD()
 		//load rx,@ry
 		case asmc::TokenType::REGADR:
 						
-			memlay.m_opcode = asmc_CombineModBits(asmc::TokenType::LOAD, asmc_MOD_RegAdr);
+			memlay.m_opcode = asmc_CombineModBits_t0(asmc::TokenType::LOAD, asmc_MOD_RegAdr);
 
 			memlay.m_packetSize = 0;
 
-			//00xx_x000
-			registerPart = asmc_CombineRegA(registerPart);
+			//----------//
+			rega = registerPart;
+			reguz = regType;
+			regb = rdx::hexToDec8(m_currentToken.m_text);			
+			//----------//
 
-			//uuxx_x000
-			registerPart = asmc_CombineRegUz(registerPart, asmc::UzTip::REG_32);
-
-			//ry
-			registerPart = registerPart | rdx::hexToDec8(m_currentToken.m_text);
-
-			registerPart = registerPart | asmc_CombineRegUz(registerPart, regType);
+			memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, reguz, rega, regb);
 
 		break;
 
 		//load rx, @adr
 		case asmc::TokenType::ADDRESS:
 
-			memlay.m_opcode = asmc_CombineModBits(asmc::TokenType::LOAD, asmc_MOD_Adr);
+			memlay.m_opcode = asmc_CombineModBits_t0(asmc::TokenType::LOAD, asmc_MOD_Adr);
 
 			//4byte adr
 			memlay.m_packetSize = asmc_WORD;
-			memlay.m_packet = new uint8_t[asmc_WORD];
+			memlay.m_packet = new uint8_t[asmc_WORD];	
 
-			//00xx_x000
-			registerPart = asmc_CombineRegA(registerPart);
+			//----------//
+			rega = registerPart;
+			reguz = regType;					
+			//----------//
 
-			//uuxx_x000
-			registerPart = asmc_CombineRegUz(registerPart, asmc::UzTip::REG_32);
-
+			memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, reguz, rega, 0);
+			
 			convertToBytes(m_currentToken.m_text, asmc::UzTip::REG_32, memlay.m_packet);
 
 		break;
@@ -1058,21 +1016,22 @@ void Parser::parseLOAD()
 		//load rx, @adr + ry
 		case asmc::TokenType::ADR_P_REG:
 		{
-			memlay.m_opcode = asmc_CombineModBits(asmc::TokenType::LOAD, asmc_MOD_Adr_P_Reg);
+			memlay.m_opcode = asmc_CombineModBits_t0(asmc::TokenType::LOAD, asmc_MOD_Adr_P_Reg);
 
 			memlay.m_packetSize = asmc_WORD;
 			memlay.m_packet = new uint8_t[asmc_WORD];
 
-			//00xx_x000
-			registerPart = asmc_CombineRegA(registerPart);
-
-			//uuxx_x000
-			registerPart = asmc_CombineRegUz(registerPart, asmc::UzTip::REG_32);
+								
 
 			asmc::PacketAdrPReg padrpreg = getAdr_P_RegPart(m_currentToken.m_text);
-			
-			//uuxx_xyyy
-			registerPart = asmc_CombineRegB(registerPart, (uint8_t)padrpreg.m_regPart);
+
+			//----------//
+			rega = registerPart;
+			reguz = regType;
+			regb = rdx::hexToDec8(m_currentToken.m_text);
+			//----------//
+
+			memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, reguz, rega, (uint8_t)padrpreg.m_regPart);	
 
 			//TODO dokumana bak string_view substr() varmi?
 			std::string adr = rdx::decToHex(padrpreg.m_adrPart);			
@@ -1087,10 +1046,7 @@ void Parser::parseLOAD()
 		}
 		break;
 
-	}
-
-	
-	memlay.m_regPart = registerPart;
+	}		
 
 	m_ramLocation++;
 	m_output.push_back(memlay);
@@ -1134,6 +1090,9 @@ void Parser::parseSTR()
 	MemoryLayout memlay;
 	memlay.m_opcode = opcode;
 	memlay.m_ramIndex = m_ramLocation;
+	m_ramLocation++;
+
+	uint8_t reguz, rega, regb;
 
 	//str @adr+rx, @ry
 	if (adrPart.m_type == asmc::TokenType::ADR_P_REG)
@@ -1142,23 +1101,18 @@ void Parser::parseSTR()
 		opcode = asmc_CombineModBits_t0(asmc::TokenType::STR, asmc_MOD_Adr_P_Reg);
 
 		
-		asmc::PacketAdrPReg padrpreg = getAdr_P_RegPart(m_currentToken.m_text);
-
-		uint8_t regPart = (uint8_t)padrpreg.m_regPart;
-
-		//00xx_x000
-		regPart = asmc_CombineRegA(regPart);
-		m_ramLocation++;		
+		asmc::PacketAdrPReg padrpreg = getAdr_P_RegPart(m_currentToken.m_text);			
 
 		moveCurrentToken();
 
-		//00xx_xyyy
-		regPart = asmc_CombineRegB(regPart, rdx::hexToDec8(m_currentToken.m_text));
+		//----------//
+		rega = (uint8_t)padrpreg.m_regPart;
+		regb = rdx::hexToDec8(m_currentToken.m_text);
+		//----------//
+		m_ramLocation++;
 
-		//uuxx_xyyy
-		regPart = asmc_CombineRegUz(regPart, asmc::UzTip::REG_32);
+		memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, 0, rega, regb);
 
-		memlay.m_regPart = regPart;
 		memlay.m_packetSize = asmc_WORD;
 		memlay.m_packet = new uint8_t[asmc_WORD];
 
@@ -1173,7 +1127,7 @@ void Parser::parseSTR()
 
 		convertToBytes(adr, asmc::UzTip::REG_32, memlay.m_packet);
 
-		m_ramLocation += asmc_WORD * 2;
+		//m_ramLocation += asmc_WORD * 2;
 		
 		
 	}
@@ -1185,7 +1139,7 @@ void Parser::parseSTR()
 		{
 			//TODO 1 bayt kullanilmiyor
 
-			//str @adr,sayi
+		//str @adr,sayi
 		case asmc::TokenType::HEXNUMBER:
 
 			memlay.m_packetSize = asmc_WORD;
@@ -1200,53 +1154,52 @@ void Parser::parseSTR()
 			//sayi
 			convertToBytes(m_currentToken.m_text, asmc::UzTip::REG_32, memlay.m_reservedPacket);
 
-			m_ramLocation += asmc_WORD * 2;
+			//m_ramLocation += asmc_WORD * 2;
 
 			break;
-			//str @adr,rx
+
+		//str @adr,rx
 		case asmc::TokenType::REGISTER:
 		{
 			opcode = asmc_CombineModBits_t0(asmc::TokenType::STR, asmc_MOD_Rx);
 
-			uint8_t regPart = rdx::hexToDec8(m_currentToken.m_text);
-
-			//00xx_x000
-			regPart = asmc_CombineRegA(regPart);
+			//----------//
+			rega = rdx::hexToDec8(m_currentToken.m_text);
+			reguz = m_currentToken.m_regType;
+			//----------//
 			m_ramLocation++;
 
-			//uuxx_x000
-			regPart = asmc_CombineRegUz(regPart, m_currentToken.m_regType);
+			memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, reguz, rega, 0);
 
-			memlay.m_regPart = regPart;
+		
 			memlay.m_packetSize = asmc_WORD;
 			memlay.m_packet = new uint8_t[asmc_WORD];
 
 			convertToBytes(adrPart.m_text, asmc::UzTip::REG_32, memlay.m_packet);
 
-			m_ramLocation += asmc_WORD * 2;
+			//m_ramLocation += asmc_WORD * 2;
 		}
 		break;
 
+		//str @adr, @rx
 		case asmc::TokenType::REGADR:
 		{
 			opcode = asmc_CombineModBits_t0(asmc::TokenType::STR, asmc_MOD_RegAdr);
 
-			uint8_t regPart = rdx::hexToDec8(m_currentToken.m_text);
 
-			//00xx_x000
-			regPart = asmc_CombineRegA(regPart);
+			//----------//
+			rega = rdx::hexToDec8(m_currentToken.m_text);
+			reguz = m_currentToken.m_regType;
+			//----------//
 			m_ramLocation++;
 
-			//uuxx_x000
-			regPart = asmc_CombineRegUz(regPart, m_currentToken.m_regType);
+			memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, reguz, rega, 0);						
 
-			memlay.m_regPart = regPart;
 			memlay.m_packetSize = asmc_WORD;
 			memlay.m_packet = new uint8_t[asmc_WORD];
 
 			convertToBytes(adrPart.m_text, asmc::UzTip::REG_32, memlay.m_packet);
-
-			m_ramLocation += asmc_WORD * 2;
+			
 		}
 		break;
 		}
@@ -1273,45 +1226,39 @@ void Parser::parseMOV()
 		return;
 	}
 
-	uint32_t opcode = m_opcodeHexTable[asmc::TokenType::MOV] << asmc_ShiftAmount_Opcode;
-	
-	//m_currentToken => rx
-	moveCurrentToken();
 	MemoryLayout memlay;
+	memlay.m_ramIndex = m_ramLocation;
+	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::MOV];
+	m_ramLocation++;
 
-	uint32_t rx = rdx::hexToDec(m_currentToken.m_text);
+	uint8_t rx, ry;
+	
+	moveCurrentToken();
+	
+	rx = rdx::hexToDec(m_currentToken.m_text);
 	
 	//m_currentToken => ry
 	moveCurrentToken();
 	if (m_currentToken.m_type != asmc::TokenType::REGISTER)
 	{
-		printError("expected register for second operand [MOV rx, (ry)!]");
-		
+		printError("expected register for second operand [MOV rx, (ry)!]");		
 	}
 	else
 	{		
-		uint32_t ry = rdx::hexToDec(m_currentToken.m_text);
+		ry = rdx::hexToDec(m_currentToken.m_text);
 
 		if (rx > 7 || ry > 7)
 		{
 			printError("Registers must in range [0-7]");
 		}
 
-		rx <<= asmc_ShiftAmount_RegA;
-		ry <<= asmc_ShiftAmount_RegB;
-
-		opcode = (opcode | rx) | ry;
-		
+		memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, 0, rx, ry);
+		m_ramLocation++;
 	}
-	memlay.m_opcode = opcode;
-	memlay.m_packetSize = 1;
-	memlay.m_ramIndex = m_ramLocation;
 	
-
-	m_ramLocation += 1;
-
-	m_output.push_back(memlay);
 	
+	
+	m_output.push_back(memlay);	
 }
 
 #pragma endregion
@@ -1329,49 +1276,9 @@ void Parser::parseArithmeticPart()
 		moveCurrentToken();
 		return;
 	}
-
-	uint32_t opcode = 0;
+		
+	MemoryLayout memlay = parseOperand(m_currentToken.m_type);
 	
-	switch (m_currentToken.m_type)
-	{
-	case asmc::TokenType::ADD:
-		opcode = m_opcodeHexTable[asmc::TokenType::ADD];
-		break;
-
-	case asmc::TokenType::SUB:
-		opcode = m_opcodeHexTable[asmc::TokenType::SUB];
-		break;
-	
-	case asmc::TokenType::MUL:
-		opcode = m_opcodeHexTable[asmc::TokenType::MUL];
-		break;
-
-	case asmc::TokenType::DIV:
-		opcode = m_opcodeHexTable[asmc::TokenType::DIV];
-		break;
-	}
-
-	opcode = opcode << asmc_ShiftAmount_Opcode;
-
-	//m_currentToken => register
-	moveCurrentToken();
-
-	if (m_peekToken.m_type == asmc::TokenType::EMPTY)
-	{
-		printError("detected empty token in arithmetic opcode");
-	}
-
-	uint32_t registerPart = rdx::hexToDec(m_currentToken.m_text);
-
-	opcode = asmc_CombineRegB(opcode, registerPart);
-	
-	//m_currentToken => register | regadr | adr | reg + adr
-	moveCurrentToken();
-
-	MemoryLayout memlay;
-
-	memlay = parseOperand(opcode);
-
 	m_output.push_back(memlay);
 }
 
@@ -1424,7 +1331,7 @@ void Parser::parseLogicPart()
 	}
 	else
 	{		
-		memlay = parseOperand(opcode);
+		//memlay = parseOperand(opcode);
 		m_output.push_back(memlay);
 	}
 }
@@ -1852,27 +1759,27 @@ void Parser::parseJMP()
 		printError("Expected label after jump instruction");
 	}
 
-	uint32_t opcode = 0;
+	uint8_t opcode = 0;
 	switch (m_currentToken.m_type)
 	{
 	case asmc::TokenType::JMP:
-		opcode = m_opcodeHexTable[asmc::TokenType::JMP] << asmc_ShiftAmount_Opcode;
+		opcode = m_opcodeHexTable[asmc::TokenType::JMP];
 		break;
 
 	case asmc::TokenType::JNE:
-		opcode = m_opcodeHexTable[asmc::TokenType::JNE] << asmc_ShiftAmount_Opcode;
+		opcode = m_opcodeHexTable[asmc::TokenType::JNE];
 		break;
 
 	case asmc::TokenType::JE:
-		opcode = m_opcodeHexTable[asmc::TokenType::JE] << asmc_ShiftAmount_Opcode;
+		opcode = m_opcodeHexTable[asmc::TokenType::JE];
 		break;
 
 	case asmc::TokenType::JG:
-		opcode = m_opcodeHexTable[asmc::TokenType::JG] << asmc_ShiftAmount_Opcode;
+		opcode = m_opcodeHexTable[asmc::TokenType::JG];
 		break;
 
 	case asmc::TokenType::JL:
-		opcode = m_opcodeHexTable[asmc::TokenType::JL] << asmc_ShiftAmount_Opcode;
+		opcode = m_opcodeHexTable[asmc::TokenType::JL];
 		break;
 
 	}

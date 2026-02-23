@@ -61,7 +61,7 @@ Parser::Parser(asmc::Lexer& lexer)
 	m_parserFuncs[asmc::TokenType::XOR] = &asmc::Parser::parseLogicPart;
 
 	m_parserFuncs[asmc::TokenType::NOT] = &asmc::Parser::parseNOT;
-	m_parserFuncs[asmc::TokenType::CMP] = &asmc::Parser::parseCMP;
+	m_parserFuncs[asmc::TokenType::CMP] = &asmc::Parser::parseArithmeticPart;
 
 	//JUMP
 	m_parserFuncs[asmc::TokenType::JMP] = &asmc::Parser::parseJMP;
@@ -106,7 +106,7 @@ Parser::Parser(asmc::Lexer& lexer)
 	m_opcodeHexTable[asmc::TokenType::NOT] = 0x53;
 
 	m_opcodeHexTable[asmc::TokenType::SHL] = 0x03;
-	m_opcodeHexTable[asmc::TokenType::SHR] = 0x33;
+	m_opcodeHexTable[asmc::TokenType::SHR] = 0x23;
 			
 	m_opcodeHexTable[asmc::TokenType::CMP] = 0x83;
 
@@ -1288,37 +1288,61 @@ void Parser::parseLogicPart()
 	{
 		printError("Expected register as first operand");
 	}
+	asmc::TokenType tokentype = m_currentToken.m_type;
+	moveCurrentToken();
 
-	uint32_t opcode = 0;
+	uint8_t rega = rdx::hexToDec(m_currentToken.m_text);
+	uint8_t regb;
+	asmc::UzTip regtype = m_currentToken.m_regType;
 
-	switch (m_currentToken.m_type)
-	{
-	case asmc::TokenType::AND:
-		opcode = m_opcodeHexTable[asmc::TokenType::AND];
-		break;
-
-	case asmc::TokenType::OR:
-		opcode = m_opcodeHexTable[asmc::TokenType::OR];
-		break;
-
-	case asmc::TokenType::XOR:
-		opcode = m_opcodeHexTable[asmc::TokenType::XOR];
-		break;
-
-	case asmc::TokenType::SHL:
-		opcode = m_opcodeHexTable[asmc::TokenType::SHL];
-		break;
-
-	case asmc::TokenType::SHR:
-		opcode = m_opcodeHexTable[asmc::TokenType::SHR];
-		break;
-	}
-
-	opcode = opcode << asmc_ShiftAmount_Opcode;
+	asmc::MemoryLayout memlay;
+	memlay.m_ramIndex = m_ramLocation;
+	m_ramLocation++;
 
 	moveCurrentToken();
-	uint32_t registerPart = rdx::hexToDec(m_currentToken.m_text);
+	
+	switch (m_currentToken.m_type)
+	{
+	case asmc::TokenType::HEXNUMBER:
+		memlay.m_opcode = asmc_CombineModBits_t0(tokentype, asmc_MOD_Number);
+		
 
+		//----------//		
+		m_ramLocation++;
+		//----------//
+
+		memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, regtype, rega, 0);
+
+		memlay.m_packetSize = regtype + 1;
+		memlay.m_packet = new uint8_t[regtype + 1];
+
+		convertToBytes(m_currentToken.m_text, regtype, memlay.m_packet);
+
+		break;
+
+	case asmc::TokenType::REGISTER:
+		if (tokentype == asmc::TokenType::SHL || tokentype == asmc::TokenType::SHR)
+		{
+			memlay.m_opcode = asmc_CombineModBits_t0(tokentype, 1);
+		}
+		else
+		{
+			memlay.m_opcode = asmc_CombineModBits_t0(tokentype, 0);
+		}
+
+		//----------//		
+		regb = rdx::hexToDec8(m_currentToken.m_text);
+		m_ramLocation++;
+		//----------//
+
+		memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, regtype, rega, regb);
+		break;
+
+	}
+
+	m_output.push_back(memlay);
+
+	/*
 	registerPart <<= asmc_ShiftAmount_RegB;
 	opcode |= registerPart;
 
@@ -1331,9 +1355,9 @@ void Parser::parseLogicPart()
 	}
 	else
 	{		
-		//memlay = parseOperand(opcode);
+		memlay = parseOperand(opcode);
 		m_output.push_back(memlay);
-	}
+	}*/
 }
 
 void Parser::parseNOT()
@@ -1344,42 +1368,19 @@ void Parser::parseNOT()
 		printError("unexpected operand");
 	}
 
-	uint32_t opcode = m_opcodeHexTable[asmc::TokenType::NOT] << asmc_ShiftAmount_Opcode;
+	asmc::MemoryLayout memlay;
 
-	MemoryLayout memlay;
+	memlay.m_opcode = asmc_CombineModBits_t0(asmc::TokenType::NOT, 0);
+	memlay.m_ramIndex = m_ramLocation;
+	m_ramLocation++;
+
 	moveCurrentToken();
 
-	uint32_t registerPart = 0;
-	if (m_currentToken.m_type == asmc::TokenType::REGISTER)
-	{
-		registerPart = rdx::hexToDec(m_currentToken.m_text);
-	}
-	//ID
-	else
-	{
-		if (m_symbolTable.contains(m_currentToken))
-		{
-			registerPart = m_symbolTable[m_currentToken].m_ramIndex;
-		}
-		else
-		{
-			printError("undefined macro used at");
-		}
-		
-	}
-
-	if (registerPart > 7)
-	{
-		printError("register part MUST be in [0-7] range");
-	}
-
-	opcode = opcode | (registerPart << asmc_ShiftAmount_RegB);	
-
-	memlay.m_opcode = opcode;
-	memlay.m_ramIndex = m_ramLocation;
-	memlay.m_packetSize = 1;
-
-	m_ramLocation += 1;
+	//-----------//
+	uint8_t rega = rdx::hexToDec8(m_currentToken.m_text);
+	memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, m_currentToken.m_regType, rega, 0);
+	m_ramLocation++;
+	//-----------//
 
 	m_output.push_back(memlay);
 }

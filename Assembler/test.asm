@@ -76,8 +76,26 @@
 	
 	div $rs1, $rs2
 
-*/
+;CMP
+	cmp $rs1,0xf2
+	cmp $rs1,@r2
+	cmp $rs1,@ff02'0c0d
+	cmp $rs1,$rs2
 
-	
-	
+
+
+
+shl $rs1, 0xff
+shl $rs1, $rs2
+
+shr $rs1, 0xff
+shr $rs1, $rs2
+
+and $rs1, $rs2
+or $rs1, $rs2
+xor $rs1, $rs2
+
+not $rs1
+
+*/
 	

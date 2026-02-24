@@ -66,12 +66,8 @@ namespace asmc
 	struct UnresolvedEntry
 	{
 		uint8_t m_opcode = 0;
-		//TODO remove
-		uint32_t m_secondPart = 0;
-		int m_ramIndex = -1;
-
-		//TODO remove
-		char m_packetSize = 0;
+		
+		int m_ramIndex = -1;		
 
 		//for printing error or warning
 		std::string m_fileName;
@@ -91,7 +87,7 @@ namespace asmc
 		uint8_t m_opcode = 0;
 
 		//TODO remove
-		uint8_t m_secondPart = 0;
+		//uint8_t m_secondPart = 0;
 
 		uint8_t m_regPart = 0;
 
@@ -119,7 +115,6 @@ namespace asmc
 		int m_lineNumber = -1;
 
 		asmc::LabelStatus m_status;
-
 
 	};
 

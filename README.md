@@ -71,6 +71,13 @@
     |   0x21      |   0xDA      |
     .-------------.-------------. 
 
+	ekle
+		pusha
+		popa
+		mwe
+		md
+		cmp
+
 ### hatalar
 
 

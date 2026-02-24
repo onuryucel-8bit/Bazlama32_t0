@@ -344,32 +344,28 @@ void Parser::checkTables()
 								MemoryLayout memlay;
 
 								memlay.m_opcode = entry[i].m_opcode;
-								//memlay.m_packetSize = entry[i].m_packetSize;
+
+								memlay.m_packetSize = asmc_WORD;
+								memlay.m_packet = new uint8_t[asmc_WORD];
 								memlay.m_ramIndex = entry[i].m_ramIndex;
-								//memlay.m_secondPart = m_symbolTable[symKey].m_ramIndex;
-								
-								uint32_t funcAdr = m_symbolTable[m_currentToken].m_ramIndex;
+								memlay.m_regFlag = asmc::RegisterFlag::NoReg;
+							
+								uint32_t funcAdr = m_symbolTable[symKey].m_ramIndex;
 								for (size_t i = 0; i < 4; i++)
 								{
-									memlay.m_packet[i] = funcAdr & (0xff << (2 * i));
+									memlay.m_packet[i] = funcAdr & (0xff << (8 * i));
 								}
 
 								m_output.push_back(memlay);
-							}
-							//combine label address with jmp instructions
-							//std::cout << "ramIndex " << value.m_ramIndex << "\n";
-							//m_jumpTable[labelName].m_secondPart = value.m_ramIndex;
-							//m_symbolTable[key].m_status = asmc::LabelStatus::Used;
-
-							//m_output.push_back(m_jumpTable[labelName]);
+							}							
 						}
 					}
 
-					//for warning
-					if (value.m_status == asmc::LabelStatus::NotUsed)
-					{
-						//printWarning("Label not used[" + key + "]");
-					}
+					////for warning
+					//if (value.m_status == asmc::LabelStatus::NotUsed)
+					//{
+					//	printWarning("Label not used[" + symKey + "]");
+					//}
 				}
 
 				if (value.m_status == asmc::LabelStatus::NotUsed)
@@ -1391,85 +1387,6 @@ void Parser::parseNOT()
 	m_output.push_back(memlay);
 }
 
-void Parser::parseCMP()
-{
-	if (m_peekToken.m_type != asmc::TokenType::REGISTER)
-	{
-		printError("unexpected operand");
-	}
-
-	uint32_t opcode = m_opcodeHexTable[asmc::TokenType::CMP] << asmc_ShiftAmount_Opcode;
-
-	asmc::MemoryLayout memlay;
-
-	moveCurrentToken();
-
-	if (m_currentToken.m_type != asmc::REGISTER &&
-		m_currentToken.m_type != asmc::REGADR   &&
-		m_currentToken.m_type != asmc::ADDRESS  )
-	{
-		printError("unexpected operand");
-	}
-	switch (m_peekToken.m_type)
-	{
-		case asmc::TokenType::HEXNUMBER:
-			opcode |= asmc_CombineModBits(opcode, asmc_MOD_Number);
-			break;
-
-		case asmc::TokenType::ADDRESS:
-			opcode |= asmc_CombineModBits(opcode, asmc_MOD_Adr);
-			break;
-
-		case asmc::TokenType::REGADR:
-			opcode |= asmc_CombineModBits(opcode, asmc_MOD_RegAdr);
-			break;
-
-		case asmc::TokenType::REGISTER:
-			//5
-			opcode |= asmc_CombineModBits(opcode, asmc_MOD_Rx_Ry);
-			break;
-	}
-
-
-	switch (m_peekToken.m_type)
-	{
-	case asmc::TokenType::REGADR:
-	case asmc::TokenType::REGISTER:
-			opcode = opcode | (rdx::hexToDec(m_currentToken.m_text) << asmc_ShiftAmount_RegA);
-
-			moveCurrentToken();
-			
-			opcode = opcode | (rdx::hexToDec(m_currentToken.m_text) << asmc_ShiftAmount_RegB);
-
-			memlay.m_packetSize = 1;
-			memlay.m_ramIndex = m_ramLocation;
-			m_ramLocation += 1;
-		break;
-
-	case asmc::TokenType::HEXNUMBER:
-	case asmc::TokenType::ADDRESS:
-			opcode = opcode | (rdx::hexToDec(m_currentToken.m_text) << asmc_ShiftAmount_RegB);
-
-			moveCurrentToken();
-
-			memlay.m_secondPart = rdx::hexToDec(m_currentToken.m_text);
-			
-			memlay.m_packetSize = 2;
-			memlay.m_ramIndex = m_ramLocation;
-			m_ramLocation += 2;
-		break;
-	}
-	
-	memlay.m_opcode = opcode;
-	
-	
-	
-	
-
-	m_output.push_back(memlay);
-	
-}
-
 #pragma endregion
 
 //------------STACK--------------------//
@@ -1832,7 +1749,7 @@ void Parser::parseLabel()
 
 	if (m_symbolTable.contains(m_currentToken))
 	{		
-		//print error label defined twice or more
+		printError("label used twice");
 	}
 	else
 	{
@@ -1877,15 +1794,7 @@ void Parser::parseJMP()
 	moveCurrentToken();
 
 	if (m_symbolTable.contains(m_currentToken))
-	{
-		
-		/*MemoryLayout memlay = m_symbolTable[m_currentToken].m_memlay;
-
-		memlay.m_opcode = opcode;
-		memlay.m_ramIndex = m_ramLocation;
-		
-		m_output.push_back(memlay);*/
-
+	{				
 		m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::Used;
 
 		MemoryLayout memlay;
@@ -1893,47 +1802,42 @@ void Parser::parseJMP()
 		memlay.m_opcode = opcode;
 		memlay.m_packetSize = 2;
 		memlay.m_ramIndex = m_ramLocation;
-		memlay.m_secondPart = m_symbolTable[m_currentToken].m_ramIndex;
+		m_ramLocation++;
+
+		memlay.m_regFlag = asmc::RegisterFlag::NoReg;
+
+		//----------------------//
+
+		memlay.m_packetSize = asmc::UzTip::REG_32 + 1;
+		memlay.m_packet = new uint8_t[asmc::UzTip::REG_32 + 1];
+		m_ramLocation += asmc_WORD;
+
+		uint32_t funcAdr = m_symbolTable[m_currentToken].m_ramIndex;
+		for (size_t i = 0; i < 4; i++)
+		{
+			memlay.m_packet[i] = funcAdr & (0xff << (8 * i));
+		}		
 
 		m_output.push_back(memlay);
 	}
 	else
-	{
-		//MemoryLayout memlay;
-
-		//memlay.m_opcode = opcode;
-		//memlay.m_ramIndex = m_ramLocation;
-		//memlay.m_packetSize = 2;
-		////memlay.m_secondPart
-
-		//m_symbolTable[m_currentToken] = { memlay, asmc::LabelStatus::Undefined };
-
-		/*m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::Used;
-
-		MemoryLayout memlay;
-
-		memlay.m_opcode = opcode;
-		memlay.m_secondPart = m_symbolTable[m_currentToken].m_ramIndex;
-		memlay.m_ramIndex = m_ramLocation;
-		memlay.m_packetSize = 2;
-
-		m_output.push_back(memlay);*/
-
+	{	
 		asmc::UnresolvedEntry entry;
 
-		entry.m_opcode = opcode;
-		entry.m_secondPart = -1;
+		entry.m_opcode = opcode;		
 		entry.m_ramIndex = m_ramLocation;
-		entry.m_packetSize = 2;
+		m_ramLocation++;
+		
 		entry.m_fileName = m_lexer.getCurrentFileName();
 		entry.m_lineNumber = m_lineNumber;
 		entry.m_status = asmc::LabelStatus::Undefined;
 
-		m_unresolvedTable[m_currentToken].push_back(entry);
+		m_ramLocation += asmc_WORD;
 
+		m_unresolvedTable[m_currentToken].push_back(entry);
 	}
 
-	m_ramLocation += 2;
+	
 }
 
 //------------------------------------//

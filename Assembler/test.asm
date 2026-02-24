@@ -82,44 +82,69 @@
 	cmp $rs1,@ff02'0c0d
 	cmp $rs1,$rs2
 
+;SHL
+	shl $rs1, 0xff
+	shl $rs1, $rs2
 
+;SHR
+	shr $rs1, 0xff
+	shr $rs1, $rs2
 
+;AND
+	and $rs1, $rs2
 
-shl $rs1, 0xff
-shl $rs1, $rs2
+;OR
+	or $rs1, $rs2
 
-shr $rs1, 0xff
-shr $rs1, $rs2
+;XOR
+	xor $rs1, $rs2
 
-and $rs1, $rs2
-or $rs1, $rs2
-xor $rs1, $rs2
+;NOT
+	not $rs1
 
-not $rs1
+;PUSH
+	push $rs1
+	push $ra1
+	push $ro1
 
+;POP
+	pop $rs1
+	pop $ra1
+	pop $ro1
 
+;CALL
+	call @r1
+	call @ff00'22cc
 
-push $rs1
-push $ra1
-push $ro1
+	;------------;
+	FUNC func_t0
+	
+	RET	
 
-pop $rs1
-pop $ra1
-pop $ro1
+	call func_t0
+	;------------;
 
-call @r1
-call @ff00'22cc
+	call func_t1
 
-FUNC func_t0
+	FUNC func_t1
 
-RET
+	RET
+	;------------;
 
-call func_t0
+;JMP
 
+	add $rs1, $rs2
+	l_t1:
+		sub $rs1, $rs2
+
+		jmp l_t1
+
+	add $rs1, $rs2
+
+	jmp l_t2
+
+	l_t2:
+		add $rs1,$rs2
+		add $rs1,$rs2
 */
 
-call func_t1
-
-FUNC func_t1
-
-RET

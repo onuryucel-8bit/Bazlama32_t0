@@ -171,8 +171,6 @@ namespace asmc
 		//----------------------------------//
 
 		void parseNOT();
-
-		void parseCMP();
 		//-----------------------------------//
 
 		void parsePUSH();

@@ -73,8 +73,6 @@
 
 ### hatalar
 
-    str @adres, sayi 
-      bos yere bellek kismi kullanilmakta
 
     kaynak:
         Lexer::lexSingleChar()

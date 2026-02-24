@@ -85,7 +85,7 @@ Parser::Parser(asmc::Lexer& lexer)
 
 	//STACK 
 	m_opcodeHexTable[asmc::TokenType::CALL] = 0x04;
-	m_opcodeHexTable[asmc::TokenType::RET] =  0x14;
+	m_opcodeHexTable[asmc::TokenType::RET] =  0xe4;
 	m_opcodeHexTable[asmc::TokenType::PUSH] = 0x24;
 	m_opcodeHexTable[asmc::TokenType::POP] =  0x34;
 
@@ -274,15 +274,13 @@ void Parser::writeOutput()
 			
 			file << ramIndex << " " << (int)m_output[i].m_opcode << "\n";
 			ramIndex++;
-
-			//dont print reg part str @adr,sayi
-			if (m_output[i].m_opcode != 0x10)
+			
+			if (m_output[i].m_regFlag == asmc::RegisterFlag::Reg)
 			{
 				file << ramIndex << " " << (int)m_output[i].m_regPart << "\n";
 				ramIndex++;
 			}
-			
-			
+						
 			for (size_t j = 0; j < m_output[i].m_packetSize; j++)
 			{
 				file << ramIndex << " " << (int)m_output[i].m_packet[j] << "\n";
@@ -346,9 +344,15 @@ void Parser::checkTables()
 								MemoryLayout memlay;
 
 								memlay.m_opcode = entry[i].m_opcode;
-								memlay.m_packetSize = entry[i].m_packetSize;
+								//memlay.m_packetSize = entry[i].m_packetSize;
 								memlay.m_ramIndex = entry[i].m_ramIndex;
-								memlay.m_secondPart = m_symbolTable[symKey].m_ramIndex;
+								//memlay.m_secondPart = m_symbolTable[symKey].m_ramIndex;
+								
+								uint32_t funcAdr = m_symbolTable[m_currentToken].m_ramIndex;
+								for (size_t i = 0; i < 4; i++)
+								{
+									memlay.m_packet[i] = funcAdr & (0xff << (2 * i));
+								}
 
 								m_output.push_back(memlay);
 							}
@@ -948,7 +952,7 @@ void Parser::parseLOAD()
 	//next token ry
 	moveCurrentToken();
 
-	MemoryLayout memlay;
+	asmc::MemoryLayout memlay;
 	
 	memlay.m_opcode = opcode;
 	memlay.m_ramIndex = m_ramLocation;
@@ -961,6 +965,8 @@ void Parser::parseLOAD()
 	{
 		//load rx,sayi
 		case asmc::TokenType::HEXNUMBER:	
+
+			memlay.m_regFlag = asmc::RegisterFlag::NoReg;
 
 			//----------//
 			rega = registerPart;
@@ -1087,7 +1093,7 @@ void Parser::parseSTR()
 
 	asmc::Token adrPart = m_currentToken;	
 
-	MemoryLayout memlay;
+	asmc::MemoryLayout memlay;
 	memlay.m_opcode = opcode;
 	memlay.m_ramIndex = m_ramLocation;
 	m_ramLocation++;
@@ -1099,7 +1105,7 @@ void Parser::parseSTR()
 	{
 		
 		opcode = asmc_CombineModBits_t0(asmc::TokenType::STR, asmc_MOD_Adr_P_Reg);
-
+		memlay.m_regFlag = asmc::RegisterFlag::NoReg;
 		
 		asmc::PacketAdrPReg padrpreg = getAdr_P_RegPart(m_currentToken.m_text);			
 
@@ -1226,7 +1232,7 @@ void Parser::parseMOV()
 		return;
 	}
 
-	MemoryLayout memlay;
+	asmc::MemoryLayout memlay;
 	memlay.m_ramIndex = m_ramLocation;
 	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::MOV];
 	m_ramLocation++;
@@ -1277,7 +1283,7 @@ void Parser::parseArithmeticPart()
 		return;
 	}
 		
-	MemoryLayout memlay = parseOperand(m_currentToken.m_type);
+	asmc::MemoryLayout memlay = parseOperand(m_currentToken.m_type);
 	
 	m_output.push_back(memlay);
 }
@@ -1394,7 +1400,7 @@ void Parser::parseCMP()
 
 	uint32_t opcode = m_opcodeHexTable[asmc::TokenType::CMP] << asmc_ShiftAmount_Opcode;
 
-	MemoryLayout memlay;
+	asmc::MemoryLayout memlay;
 
 	moveCurrentToken();
 
@@ -1477,7 +1483,7 @@ void Parser::parsePUSH()
 		printError("unexpected operand");
 	}
 
-	MemoryLayout memlay;
+	asmc::MemoryLayout memlay;
 
 	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::PUSH];
 	memlay.m_ramIndex = m_ramLocation;
@@ -1505,7 +1511,7 @@ void Parser::parsePOP()
 		printError("unexpected operand");
 	}
 
-	MemoryLayout memlay;
+	asmc::MemoryLayout memlay;
 		
 	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::POP];
 	memlay.m_ramIndex = m_ramLocation;
@@ -1566,7 +1572,7 @@ void Parser::parseMR()
 
 void Parser::parseCALL()
 {
-	if (m_peekToken.m_type == asmc::TokenType::REGISTER)
+	/*if (m_peekToken.m_type == asmc::TokenType::REGISTER)
 	{
 		printError("register used as address without @");
 	}
@@ -1575,51 +1581,39 @@ void Parser::parseCALL()
 		m_peekToken.m_type != asmc::TokenType::REGADR)
 	{
 		printError("CALL must be followed by a function name");
-	}
+	}*/
 	
 
-	uint32_t opcode = m_opcodeHexTable[asmc::TokenType::CALL] << asmc_ShiftAmount_Opcode;	
-
-	opcode |= 0b111 << asmc_ShiftAmount_RegA;
-
+	//uint8_t opcode = m_opcodeHexTable[asmc::TokenType::CALL];
+	asmc::MemoryLayout memlay;	
+	uint8_t rega;
+	int lineNumber = m_currentToken.m_lineNumber;
 	moveCurrentToken();
 
-	uint32_t rx = 0;
-
-	asmc::MemoryLayout memlay;
-
-	switch (m_currentToken.m_type)
+	switch (m_currentToken.m_type)	
 	{
-	case asmc::TokenType::REGADR:
-
-		opcode = asmc_CombineModBits(opcode, asmc_MOD_RegAdr);
-
-		rx = std::stoi(m_currentToken.m_text) << asmc_ShiftAmount_RegB;
-
-		opcode |= rx;		
-
-		memlay.m_opcode = opcode;
-		memlay.m_packetSize = 1;
-		memlay.m_ramIndex = m_ramLocation;
-
-		m_output.push_back(memlay);
-
-		m_ramLocation += 1;
-		break;
-
 	case asmc::TokenType::ID:
+		memlay.m_opcode = asmc_CombineModBits_t0(asmc::TokenType::CALL, 1);
+				
 		//func is defined
 		if (m_symbolTable.contains(m_currentToken) && m_symbolTable[m_currentToken].m_status != asmc::LabelStatus::No_FuncDef)
 		{
-			m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::Called;
-
-			memlay.m_opcode = opcode;
-			memlay.m_packetSize = 2;
+			m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::Called;			
 			memlay.m_ramIndex = m_ramLocation;
-			memlay.m_secondPart = m_symbolTable[m_currentToken].m_ramIndex;
+			memlay.m_regFlag = asmc::RegisterFlag::NoReg;
+			m_ramLocation++;
+
+			memlay.m_packetSize = asmc::UzTip::REG_32 + 1;
+			memlay.m_packet = new uint8_t[asmc::UzTip::REG_32 + 1];
+			m_ramLocation += asmc_WORD;
+
+			uint32_t funcAdr = m_symbolTable[m_currentToken].m_ramIndex;
+			for (size_t i = 0; i < 4; i++)
+			{
+				memlay.m_packet[i] = funcAdr & (0xff << (8 * i));
+			}
 
 			m_output.push_back(memlay);
-
 		}
 		//func definition after the CALL command ?
 		else
@@ -1628,20 +1622,114 @@ void Parser::parseCALL()
 
 			asmc::UnresolvedEntry entry;
 
-			entry.m_opcode = opcode;
-			entry.m_secondPart = -1;
+			entry.m_opcode = memlay.m_opcode;
 			entry.m_ramIndex = m_ramLocation;
-			entry.m_packetSize = 2;
+
+		//	entry.m_secondPart = -1;
+		//	entry.m_packetSize = 2;
 			entry.m_fileName = m_lexer.getCurrentFileName();
-			entry.m_lineNumber = m_lineNumber;
+			entry.m_lineNumber = lineNumber;
 			entry.m_status = asmc::LabelStatus::No_Ret;
+
+			m_ramLocation += asmc_WORD;
 
 			m_unresolvedTable[m_currentToken].push_back(entry);
 		}
+		
 
-		m_ramLocation += 2;
+		break;
+
+	case asmc::TokenType::ADDRESS:
+		memlay.m_opcode = asmc_CombineModBits_t0(asmc::TokenType::CALL, 1);
+		memlay.m_ramIndex = m_ramLocation;
+		memlay.m_regFlag = asmc::RegisterFlag::NoReg;
+		m_ramLocation++;
+
+		memlay.m_packetSize = asmc::UzTip::REG_32 + 1;
+		memlay.m_packet = new uint8_t[asmc::UzTip::REG_32 + 1];
+
+		convertToBytes(m_currentToken.m_text, asmc::UzTip::REG_32, memlay.m_packet);
+
+		m_output.push_back(memlay);
+		break;
+
+	case asmc::TokenType::REGADR:
+		memlay.m_opcode = asmc_CombineModBits_t0(asmc::TokenType::CALL, 0);
+		memlay.m_ramIndex = m_ramLocation;
+		m_ramLocation++;
+
+		//----------//
+		rega = rdx::hexToDec8(m_currentToken.m_text);
+		memlay.m_regPart = asmc_CombineRegPart_t0(memlay.m_regPart, asmc::UzTip::REG_32, rega, 0);
+		m_ramLocation++;		
+		//----------//
+
+		
+		m_output.push_back(memlay);
 		break;
 	}
+	
+
+	//moveCurrentToken();
+
+	//uint32_t rx = 0;
+
+	//asmc::MemoryLayout memlay;
+
+	//switch (m_currentToken.m_type)
+	//{
+	//case asmc::TokenType::REGADR:
+
+	//	opcode = asmc_CombineModBits(opcode, asmc_MOD_RegAdr);
+
+	//	rx = std::stoi(m_currentToken.m_text) << asmc_ShiftAmount_RegB;
+
+	//	opcode |= rx;		
+
+	//	memlay.m_opcode = opcode;
+	//	memlay.m_packetSize = 1;
+	//	memlay.m_ramIndex = m_ramLocation;
+
+	//	m_output.push_back(memlay);
+
+	//	m_ramLocation += 1;
+	//	break;
+
+	//case asmc::TokenType::ID:
+	//	//func is defined
+	//	if (m_symbolTable.contains(m_currentToken) && m_symbolTable[m_currentToken].m_status != asmc::LabelStatus::No_FuncDef)
+	//	{
+	//		m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::Called;
+
+	//		memlay.m_opcode = opcode;
+	//		memlay.m_packetSize = 2;
+	//		memlay.m_ramIndex = m_ramLocation;
+	//		memlay.m_secondPart = m_symbolTable[m_currentToken].m_ramIndex;
+
+	//		m_output.push_back(memlay);
+
+	//	}
+	//	//func definition after the CALL command ?
+	//	else
+	//	{
+	//		m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::No_FuncDef;
+
+	//		asmc::UnresolvedEntry entry;
+
+	//		entry.m_opcode = opcode;
+	//		entry.m_secondPart = -1;
+	//		entry.m_ramIndex = m_ramLocation;
+	//		entry.m_packetSize = 2;
+	//		entry.m_fileName = m_lexer.getCurrentFileName();
+	//		entry.m_lineNumber = m_lineNumber;
+	//		entry.m_status = asmc::LabelStatus::No_Ret;
+
+	//		m_unresolvedTable[m_currentToken].push_back(entry);
+	//	}
+
+	//	m_ramLocation += 2;
+	//	break;
+	//}
 
 	
 
@@ -1674,9 +1762,17 @@ void Parser::parseFUNC()
 				asmc::MemoryLayout memlay;
 
 				memlay.m_opcode = entry.m_opcode;
-				memlay.m_packetSize = entry.m_packetSize;
 				memlay.m_ramIndex = entry.m_ramIndex;
-				memlay.m_secondPart = m_ramLocation;
+				memlay.m_regFlag = asmc::RegisterFlag::NoReg;
+				memlay.m_packetSize = asmc::UzTip::REG_32 + 1;
+				memlay.m_packet = new uint8_t[asmc::UzTip::REG_32 + 1];
+
+				m_ramLocation++;
+				uint32_t funcAdr = m_ramLocation;
+				for (size_t i = 0; i < 4; i++)
+				{
+					memlay.m_packet[i] = funcAdr & (0xff << (8 * i));
+				}
 
 				m_output.push_back(memlay);
 			}
@@ -1697,7 +1793,7 @@ void Parser::parseFUNC()
 
 		m_symbolTable[m_currentToken] = sym;
 	}
-	
+	//
 	m_lastFuncName = { m_currentToken.m_text, m_currentToken.m_type};
 
 	
@@ -1705,22 +1801,17 @@ void Parser::parseFUNC()
 
 void Parser::parseRET()
 {
-
 	if (m_lastFuncName.m_text == "")
 	{		
 		printError("FUNC definition required before using RET");
 	}
 
-	uint32_t opcode = m_opcodeHexTable[asmc::TokenType::RET] << asmc_ShiftAmount_Opcode;
+	asmc::MemoryLayout memlay;
 
-	opcode |= 0b111 << asmc_ShiftAmount_RegA;
-
-	MemoryLayout memlay;
-
-	memlay.m_opcode = opcode;
-	memlay.m_packetSize = 1;
+	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::RET];
+	memlay.m_regFlag = asmc::RegisterFlag::NoReg;
 	memlay.m_ramIndex = m_ramLocation;
-	memlay.m_secondPart = 0;
+	m_ramLocation++;
 
 	if (m_symbolTable.contains(m_lastFuncName))
 	{
@@ -1728,9 +1819,8 @@ void Parser::parseRET()
 	}
 
 	m_lastFuncName.m_text = "";
-
-	m_ramLocation += 1;
-	m_output.push_back(memlay);		
+	
+	m_output.push_back(memlay);
 }
 
 #pragma endregion

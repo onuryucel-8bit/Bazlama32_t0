@@ -65,10 +65,12 @@ namespace asmc
 
 	struct UnresolvedEntry
 	{
-		uint32_t m_opcode = 0;
+		uint8_t m_opcode = 0;
+		//TODO remove
 		uint32_t m_secondPart = 0;
 		int m_ramIndex = -1;
-		//???
+
+		//TODO remove
 		char m_packetSize = 0;
 
 		//for printing error or warning
@@ -76,6 +78,12 @@ namespace asmc
 		int m_lineNumber = -1;
 
 		asmc::LabelStatus m_status;
+	};
+
+	enum class RegisterFlag
+	{
+		Reg,
+		NoReg
 	};
 
 	struct MemoryLayout
@@ -96,6 +104,8 @@ namespace asmc
 		//TODO !!MEMORY LEAK!! add delete
 		uint8_t* m_reservedPacket = nullptr;
 		uint8_t  m_resPacketSize = 0;
+
+		asmc::RegisterFlag m_regFlag = asmc::RegisterFlag::Reg;
 	};
 
 	struct Symbol

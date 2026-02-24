@@ -97,11 +97,29 @@ xor $rs1, $rs2
 
 not $rs1
 
-pop $rs1
-pop $ra1
-pop $ro1
+
 
 push $rs1
 push $ra1
 push $ro1
+
+pop $rs1
+pop $ra1
+pop $ro1
+
+call @r1
+call @ff00'22cc
+
+FUNC func_t0
+
+RET
+
+call func_t0
+
 */
+
+call func_t1
+
+FUNC func_t1
+
+RET

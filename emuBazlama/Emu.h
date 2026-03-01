@@ -6,12 +6,25 @@
 #define baz_maskRy 0b0000'0111
 #define baz_maskUz 0b1100'0000
 
+#define baz_maskFlagReg_eqeq	0x0000'0001
+#define baz_maskFlagReg_less	0x0000'0002
+#define baz_maskFlagReg_greater 0x0000'0004
+
+#define baz_false 0
+#define baz_true 1
+
 #include "../libsLocal/utils/Radix.h"
 
 #include "FileReader.h"
 
 namespace baz
 {
+	enum RegName
+	{
+		Sp = 7,	//stack pointer
+		Flag = 6
+	};
+
 	enum OperationType
 	{
 		Add,

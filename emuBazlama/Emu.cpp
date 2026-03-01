@@ -41,6 +41,10 @@ namespace baz
 			case 0x40:
 				op_STR();
 				break;
+
+			case 0x41:
+				op_MOV();
+				break;
 			}
 
 			if ((m_komut & 0b0000'1111) == 0x02)
@@ -57,89 +61,6 @@ namespace baz
 		}
 	}
 	
-	baz::RegisterPart Emu::getRegisterPart()
-	{
-		pc++;
-		baz::RegisterPart regPart;
-
-		switch ((m_ram[pc] & baz_maskUz) >> 6)
-		{
-		case 0:
-			regPart.m_reguz = baz::REG_8;
-			break;
-
-		case 1:
-			regPart.m_reguz = baz::REG_16;
-			break;
-
-		case 3:
-			regPart.m_reguz = baz::REG_32;
-			break;
-		}
-		regPart.m_rega =  (m_ram[pc] & baz_maskRx) >> 3;
-		regPart.m_regb = m_ram[pc] & baz_maskRy;
-
-		return regPart;
-	}
-
-	uint32_t Emu::getBytes(uint8_t uz)
-	{		
-		uint32_t retval = 0;
-		uint32_t temp;
-		
-		if (uz == baz::UzTip::REG_8)
-		{			
-			pc++;
-			retval = m_ram[pc];
-			return retval;
-		}
-
-		for (size_t i = 0; i < uz; i++)
-		{
-			pc++;
-			temp = m_ram[pc];
-			retval = (retval << 8) | temp;
-		}
-
-		return retval;		
-	}
-
-	void Emu::storeBytesToRam(uint32_t data, uint32_t adr)
-	{
-		for (int i = 3; i >= 0; i--)
-		{
-			uint32_t mask = 0xff00'0000 >> ((3 - i) * 8);
-
-			m_ram[adr] = (data & mask) >> 8 * i;
-
-			std::cout << std::hex << ((data & mask) >> 8 * i) << "\n";
-			std::cout << adr << "|" << (int)m_ram[adr] << "\n";
-			adr++;
-		}
-	}
-
-	uint32_t Emu::getBytes(uint8_t uz, uint32_t adr)
-	{
-		uint32_t retval = 0;
-		uint32_t temp;
-
-		if (uz == baz::UzTip::REG_8)
-		{
-			retval = m_ram[adr];
-			adr++;
-			return retval;
-		}
-
-		for (size_t i = 0; i < uz; i++)
-		{
-			temp = m_ram[adr];
-			adr++;
-			retval = (retval << 8) | temp;
-		}
-
-		return retval;
-	}
-
 	void Emu::op_LOAD()
 	{		
 		baz::RegisterPart regPart = getRegisterPart();
@@ -332,6 +253,9 @@ namespace baz
 
 	void Emu::op_MOV()
 	{
+		baz::RegisterPart regPart = getRegisterPart();
+
+		m_registerFile[regPart.m_rega] = m_registerFile[regPart.m_regb];
 	}
 
 	void Emu::op_CALL()
@@ -364,22 +288,49 @@ namespace baz
 
 	void Emu::op_JMP()
 	{
+		uint32_t adr = getBytes(baz::UzTip::REG_32);
+
+		pc = adr;
 	}
 
 	void Emu::op_JNE()
 	{
+		uint32_t adr = getBytes(baz::UzTip::REG_32);
+
+		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_eqeq) == baz_false)
+		{
+			pc = adr;
+		}
 	}
 
 	void Emu::op_JE()
 	{
+		uint32_t adr = getBytes(baz::UzTip::REG_32);
+
+		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_eqeq) == baz_true)
+		{
+			pc = adr;
+		}
 	}
 
 	void Emu::op_JG()
 	{
+		uint32_t adr = getBytes(baz::UzTip::REG_32);
+
+		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_greater) == baz_true)
+		{
+			pc = adr;
+		}
 	}
 
 	void Emu::op_JL()
 	{
+		uint32_t adr = getBytes(baz::UzTip::REG_32);
+
+		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_less) == baz_true)
+		{
+			pc = adr;
+		}
 	}
 
 	void Emu::op_MWE()
@@ -417,4 +368,88 @@ namespace baz
 	void Emu::op_CMP()
 	{
 	}
+
+	baz::RegisterPart Emu::getRegisterPart()
+	{
+		pc++;
+		baz::RegisterPart regPart;
+
+		switch ((m_ram[pc] & baz_maskUz) >> 6)
+		{
+		case 0:
+			regPart.m_reguz = baz::REG_8;
+			break;
+
+		case 1:
+			regPart.m_reguz = baz::REG_16;
+			break;
+
+		case 3:
+			regPart.m_reguz = baz::REG_32;
+			break;
+		}
+		regPart.m_rega = (m_ram[pc] & baz_maskRx) >> 3;
+		regPart.m_regb = m_ram[pc] & baz_maskRy;
+
+		return regPart;
+	}
+
+	uint32_t Emu::getBytes(uint8_t uz)
+	{
+		uint32_t retval = 0;
+		uint32_t temp;
+
+		if (uz == baz::UzTip::REG_8)
+		{
+			pc++;
+			retval = m_ram[pc];
+			return retval;
+		}
+
+		for (size_t i = 0; i < uz; i++)
+		{
+			pc++;
+			temp = m_ram[pc];
+			retval = (retval << 8) | temp;
+		}
+
+		return retval;
+	}
+
+	void Emu::storeBytesToRam(uint32_t data, uint32_t adr)
+	{
+		for (int i = 3; i >= 0; i--)
+		{
+			uint32_t mask = 0xff00'0000 >> ((3 - i) * 8);
+
+			m_ram[adr] = (data & mask) >> 8 * i;
+
+			std::cout << std::hex << ((data & mask) >> 8 * i) << "\n";
+			std::cout << adr << "|" << (int)m_ram[adr] << "\n";
+			adr++;
+		}
+	}
+
+	uint32_t Emu::getBytes(uint8_t uz, uint32_t adr)
+	{
+		uint32_t retval = 0;
+		uint32_t temp;
+
+		if (uz == baz::UzTip::REG_8)
+		{
+			retval = m_ram[adr];
+			adr++;
+			return retval;
+		}
+
+		for (size_t i = 0; i < uz; i++)
+		{
+			temp = m_ram[adr];
+			adr++;
+			retval = (retval << 8) | temp;
+		}
+
+		return retval;
+	}
+
 }

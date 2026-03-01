@@ -31,19 +31,27 @@ namespace baz
 
 			switch (m_komut)
 			{
-			case 0x01:
+			case baz::InstructionHexVal::LOAD_rx_adr:
+			case baz::InstructionHexVal::LOAD_rx_adr_p_reg:
+			case baz::InstructionHexVal::LOAD_rx_regadr:
+			case baz::InstructionHexVal::LOAD_rx_sayi:
 				op_LOAD();
 				break;
 
-			case 0x10:
-			case 0x20:
-			case 0x30:
-			case 0x40:
+			case baz::InstructionHexVal::STR_adr_p_reg_ry:
+			case baz::InstructionHexVal::STR_adr_regadr:
+			case baz::InstructionHexVal::STR_adr_rx:
+			case baz::InstructionHexVal::STR_adr_sayi:			
 				op_STR();
 				break;
 
-			case 0x41:
+			case baz::InstructionHexVal::MOV:
 				op_MOV();
+				break;
+
+			case baz::CALL_adr:
+			case baz::CALL_regadr:
+				op_CALL();
 				break;
 			}
 
@@ -230,9 +238,10 @@ namespace baz
 
 				uint32_t mdr = getBytes(regPart.m_reguz, m_registerFile[regPart.m_rega]);
 
-				storeBytesToRam(mdr, adr);
+				storeBytesToRam(mdr, adr);	
+
 				break;
-			}
+			}			
 			case baz::InstructionHexVal::STR_adr_rx:
 
 				adr = getBytes(baz::UzTip::REG_32);
@@ -260,6 +269,31 @@ namespace baz
 
 	void Emu::op_CALL()
 	{
+		switch (m_komut)
+		{
+			case baz::CALL_adr:
+			{
+				uint32_t adr = getBytes(baz::UzTip::REG_32);
+				m_ram[m_registerFile[baz::RegName::Sp]] = pc;
+			
+				m_registerFile[baz::RegName::Sp]++;
+
+				pc = adr;
+
+				break;
+			}
+			case baz::CALL_regadr:
+			{
+				baz::RegisterPart regPart = getRegisterPart();
+
+				m_ram[m_registerFile[baz::RegName::Sp]] = pc;
+
+				m_registerFile[baz::RegName::Sp]++;
+
+				pc = m_registerFile[regPart.m_rega];
+				break;
+			}
+		}
 	}
 
 	void Emu::op_RET()
@@ -367,6 +401,10 @@ namespace baz
 
 	void Emu::op_CMP()
 	{
+		switch (m_komut)
+		{
+
+		}
 	}
 
 	baz::RegisterPart Emu::getRegisterPart()

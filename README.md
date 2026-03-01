@@ -76,7 +76,6 @@
 		popa
 		mwe
 		md
-		cmp
 
 ### hatalar
 

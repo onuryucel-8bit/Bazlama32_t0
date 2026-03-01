@@ -5,9 +5,7 @@
 #include "Parser.h"
 
 int main(int argc, char* argv[])
-{
-	
-
+{	
 	//TODO add filesystem
 
 	std::string path;
@@ -17,7 +15,7 @@ int main(int argc, char* argv[])
 
 #ifdef _DEBUG		
 		std::cout << "Loading default main.asm\n";
-		path = "../test.asm";
+		path = "main.asm";
 #else
 		return 0;
 #endif // DEBUG_FILE

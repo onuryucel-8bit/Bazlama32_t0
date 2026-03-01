@@ -16,9 +16,6 @@
 //TODO move to ..\utils
 #include "Timer.h"
 
-
-#define PARSER_TEST_FUNCS
-
 //MOD bits
 //ozel bitler
 
@@ -39,51 +36,24 @@
 #define asmc_WORD 4
 
 #define asmc_CombineModBits(opcode, modBits) \
-	(opcode | (modBits << 4))
-
-#define asmc_CombineModBits_t0(opcode, modBits) \
 	(m_opcodeHexTable[opcode]) + (modBits << 4)
 
-#define asmc_CombineRegPart_t0(regPart, reguz, rega, regb) \
+#define asmc_CombineRegPart(regPart, reguz, rega, regb) \
 	regPart | ((reguz << 6) | (rega << 3) | regb)
 
-//TODO remove
-#define asmc_ShiftAmount_Opcode 24
-
-#define asmc_ShiftAmount_RegA 3
-#define asmc_ShiftAmount_RegB 0
-
-#define asmc_CombineRegA(regPart) \
-	(regPart) << asmc_ShiftAmount_RegA
-
-#define asmc_CombineRegB(regPart, ry) \
-	(regPart) | (ry) << asmc_ShiftAmount_RegB
-
-#define asmc_CombineRegUz(regPart, uz) \
-	(regPart) | ( (uz) << 6 )
-
-
 namespace asmc
-{
-
-	enum modBits
-	{
-		number,
-		adr,
-		regAdr,
-		adr_p_reg,
-	};
-
+{	
 	class Parser
 	{
 	public:
+
 		Parser(asmc::Lexer& lexer);
 		~Parser();
 
 		void run();
+
 	private:
-	
-	
+
 		void program();
 
 		void moveCurrentToken();
@@ -101,12 +71,13 @@ namespace asmc
 
 		PacketAdrPReg getAdr_P_RegPart(std::string& operand);
 
-	#ifdef PARSER_TEST_FUNCS
 		asmc::TokenType toToken(uint8_t opcode);
 		void printBinHex(asmc::MemoryLayout& memlay);
 		void printCurrentPeekToken();
-	#endif // PARSER_TEST_FUNCS
 
+		//========================================================================================//
+		//========================================================================================//
+	
 		int m_ramLocation;
 		int m_lineNumber;
 
@@ -137,6 +108,9 @@ namespace asmc
 		bool fd_scanTables;
 	
 		size_t m_errorCounter;
+
+		//========================================================================================//
+		//========================================================================================//
 
 		/*
 		*	opcode = opcode_HEX_VAL;

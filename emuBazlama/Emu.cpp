@@ -1,9 +1,17 @@
+#include "pch.h"
+
 #include "Emu.h"
 
 namespace baz
 {
 	Emu::Emu(std::string path)
 	{
+		for (size_t i = 0; i < RAM_Size; i++)
+		{
+			m_ram[i] = 0;
+		}		
+
+		fr.readFile(path, m_ram);
 	}
 
 	Emu::~Emu()
@@ -11,29 +19,24 @@ namespace baz
 	}
 
 	void Emu::run()
-	{
-		for (size_t i = 0; i < RAM_Size; i++)
+	{		
+		//source = readFile("emu.txt");
+		//placeFiletoRAM();		
+
+		while (m_ram[pc] != 0)
 		{
-			ram[i] = 0;
-		}
+			m_komut = m_ram[pc];			
 
-		source = readFile("emu.txt");
-		placeFiletoRAM();		
-
-		while (ram[pc] != 0)
-		{
-			komut = ram[pc];
-
-			uint8_t mask = komut & baz_maskCommandBits;
-
-			switch (mask)
+			switch (m_komut)
 			{
 			case 0x01:
 				op_LOAD();
-				break;
-			case 0x12:
-				op_ADD();
-				break;
+				break;							
+			}
+
+			if ((m_komut & 0b0000'1111) == 0x02)
+			{
+				op_Arithmetic();
 			}
 
 			pc++;
@@ -41,189 +44,227 @@ namespace baz
 
 		for (size_t i = 0; i < 8; i++)
 		{
-			std::cout << "reg" << i << " : " << registerFile[i] << "\n";
+			std::cout << "reg" << i << " : " << m_registerFile[i] << "\n";
 		}
 	}
 
-	std::string Emu::readFile(std::string path)
+	
+
+
+
+	baz::RegisterPart Emu::getRegisterPart()
 	{
-		std::fstream file(path);
+		pc++;
+		baz::RegisterPart regPart;
 
-		if (!file.is_open())
+		switch ((m_ram[pc] & baz_maskUz) >> 6)
 		{
-			std::cout << "ERROR:: couldnt open the file\n";
-			//return "";
+		case 0:
+			regPart.m_reguz = baz::REG_8;
+			break;
+
+		case 1:
+			regPart.m_reguz = baz::REG_16;
+			break;
+
+		case 3:
+			regPart.m_reguz = baz::REG_32;
+			break;
 		}
+		regPart.m_rega =  (m_ram[pc] & baz_maskRx) >> 3;
+		regPart.m_regb = m_ram[pc] & baz_maskRy;
 
-		std::stringstream ss;
-
-		ss << file.rdbuf();
-
-		return ss.str();
+		return regPart;
 	}
 
-	void Emu::nextChar()
-	{
-		m_position++;
-		if (m_position > source.length())
-		{
-			m_currentChar = EOF;
-		}
-		else
-		{
-			m_currentChar = source[m_position];
-		}
-
-	}
-
-	std::string Emu::getNextLine()
-	{
-		std::string str;
-		while (m_currentChar != ' ' && m_currentChar != '\n' && m_currentChar != EOF)
-		{
-			if (std::isxdigit(m_currentChar))
-			{
-				str += m_currentChar;
-			}
-			nextChar();
-		}
-
-		nextChar();
-
-		return str;
-	}
-
-	void Emu::placeFiletoRAM()
-	{
-		while (m_currentChar != EOF)
-		{
-			while (m_currentChar == '\n')
-			{
-				nextChar();
-			}
-
-			//get index
-			std::string str = getNextLine();
-
-			if (m_currentChar == EOF)
-			{
-				break;
-			}
-
-			uint32_t index = rdx::hexToDec(str);
-
-			//get hex value of the command
-			str = getNextLine();
-
-			ram[index] = rdx::hexToDec(str);
-		}
-
-	}
-
-	uint32_t Emu::getBytes(uint8_t uz, uint32_t& adres)
-	{
+	uint32_t Emu::getBytes(uint8_t uz)
+	{		
 		uint32_t retval = 0;
 		uint32_t temp;
-
-		if (uz == 0)
-		{
-			retval = ram[++adres];
+		
+		if (uz == baz::UzTip::REG_8)
+		{			
+			pc++;
+			retval = m_ram[pc];
 			return retval;
 		}
 
 		for (size_t i = 0; i < uz; i++)
 		{
-			temp = ram[++adres];
+			pc++;
+			temp = m_ram[pc];
+			retval = (retval << 8) | temp;
+		}
+
+		return retval;		
+	}
+
+	uint32_t Emu::getBytes(uint8_t uz, uint32_t adr)
+	{
+		uint32_t retval = 0;
+		uint32_t temp;
+
+		if (uz == baz::UzTip::REG_8)
+		{
+			retval = m_ram[adr];
+			adr++;
+			return retval;
+		}
+
+		for (size_t i = 0; i < uz; i++)
+		{
+			temp = m_ram[adr];
+			adr++;
 			retval = (retval << 8) | temp;
 		}
 
 		return retval;
 	}
 
-
-
 	void Emu::op_LOAD()
-	{
-		uint8_t type = komut & baz_maskModBits;
-		uint8_t rx, ry, uz;
+	{		
+		baz::RegisterPart regPart = getRegisterPart();
+		
 		uint32_t value;
-		uint32_t adr;
 
-		switch (type)
+		switch (m_komut)
 		{
 
 		//load rx,sayi
-		case 0:
+		case baz::LOAD_rx_sayi:
 			pc++;
-			rx = ram[pc] & baz_maskRx;
-			rx = rx >> 3;
-
-			uz = ram[pc] & baz_maskUz;
-			uz = uz >> 6;
-
-			value = getBytes(uz, pc);
-
-
-			registerFile[rx] = value;
-
+			value = getBytes(regPart.m_reguz);
+			m_registerFile[regPart.m_rega] = value;
 			break;
 
 		//load rx,@ry
-		case 1:
-
-			pc++;
-			rx = ram[pc] & baz_maskRx;
-			rx = rx >> 3;
-
-			ry = ram[pc] & baz_maskRy;			
-
-			uz = ram[pc] & baz_maskUz;
-			uz = uz >> 6;
-
-			value = getBytes(uz, pc);
-
-			registerFile[rx] = ram[value];
+		case baz::LOAD_rx_regadr:						
+			m_registerFile[regPart.m_rega] = m_ram[regPart.m_regb];
 			break;
 
 		//load rx,@adr
-		case 2:
+		case baz::LOAD_rx_adr:
 			pc++;
-			rx = ram[pc] & baz_maskRx;
-			rx = rx >> 3;
-
-			uz = ram[pc] & baz_maskUz;
-			uz = uz >> 6;
-
-			value = getBytes(uz, pc);
-
-
-
+			
+			//adr
+			value = getBytes(baz::UzTip::REG_32);
+			m_registerFile[regPart.m_rega] = getBytes(regPart.m_reguz, value);
 			break;
 
+		//load rx,@adr+ry
+		case baz::LOAD_rx_adr_p_reg:
+			pc++;
+
+			//adr
+			value = getBytes(baz::UzTip::REG_32);
+			m_registerFile[regPart.m_rega] = getBytes(regPart.m_reguz, value + regPart.m_regb); 
+			break;
 		}
 	}
 
-	void Emu::op_ADD()
+	//TODO template
+	void Emu::calculate(baz::OperationType type, uint32_t& reg, uint32_t value)
 	{
-		uint8_t type = komut & baz_maskModBits;
-		uint8_t rx, ry, uz;
-
 		switch (type)
 		{
-			//add rx,ry
-		case 0:
-			pc++;
-			rx = ram[pc] & baz_maskRx;
-			ry = ram[pc] & baz_maskRy;
-
-			registerFile[rx] += registerFile[ry];
-
-			break;
-			//add rx,sayi
-		case 1:
+		case baz::OperationType::Add:
+			reg += value;			
 			break;
 
+		case baz::OperationType::Sub:
+			reg -= value;
+			break;
+
+		case baz::OperationType::Mul:
+			reg *= value;
+			break;
+
+		case baz::OperationType::Div:
+			reg /= value;
+			break;
 		}
+	}
+
+	void Emu::op_Arithmetic()
+	{	
+		baz::RegisterPart regPart = getRegisterPart();
+
+		uint32_t value = 0;
+		baz::OperationType operationType = baz::OperationType::Add;
+
+		switch (m_komut)
+		{
+			case baz::ADD_rx_sayi:
+			case baz::ADD_rx_regadr:
+			case baz::ADD_rx_adr:
+			case baz::ADD_rx_ry:
+				operationType = baz::OperationType::Add;
+				break;
+
+			case baz::SUB_rx_sayi:
+			case baz::SUB_rx_regadr:
+			case baz::SUB_rx_adr:
+			case baz::SUB_rx_ry:
+				operationType = baz::OperationType::Sub;
+				break;
+
+			case baz::MUL_rx_sayi:
+			case baz::MUL_rx_regadr:
+			case baz::MUL_rx_adr:
+			case baz::MUL_rx_ry:
+				operationType = baz::OperationType::Mul;
+				break;
+
+			case baz::DIV_rx_sayi:
+			case baz::DIV_rx_regadr:
+			case baz::DIV_rx_adr:
+			case baz::DIV_rx_ry:
+				operationType = baz::OperationType::Div;
+				break;
+		}
+
+		switch (m_komut)
+		{ 
+			//add rx,sayi
+		case baz::ADD_rx_sayi:
+		case baz::SUB_rx_sayi:
+		case baz::MUL_rx_sayi:
+		case baz::DIV_rx_sayi:			
+
+			value = getBytes(regPart.m_reguz);			
+			break;
+
+			//add rx,@ry
+		case baz::ADD_rx_regadr:
+		case baz::SUB_rx_regadr:
+		case baz::MUL_rx_regadr:
+		case baz::DIV_rx_regadr:		
+
+			value = getBytes(regPart.m_reguz, m_registerFile[regPart.m_regb]);			
+			break;
+
+			//add rx,@adr
+		case baz::ADD_rx_adr:
+		case baz::SUB_rx_adr:
+		case baz::MUL_rx_adr:
+		case baz::DIV_rx_adr:
+
+			//adr
+			value = getBytes(baz::UzTip::REG_32);
+			m_registerFile[regPart.m_rega] += m_ram[value];
+			break;
+
+			//add rx,ry
+		case baz::ADD_rx_ry:
+		case baz::SUB_rx_ry:
+		case baz::MUL_rx_ry:
+		case baz::DIV_rx_ry:			
+
+			value = m_registerFile[regPart.m_regb];
+			break;
+		}
+
+		calculate(operationType, m_registerFile[regPart.m_rega], value);
 	}
 
 	void Emu::op_STR()
@@ -287,18 +328,6 @@ namespace baz
 	}
 
 	void Emu::op_MD()
-	{
-	}
-
-	void Emu::op_SUB()
-	{
-	}
-
-	void Emu::op_MUL()
-	{
-	}
-
-	void Emu::op_DIV()
 	{
 	}
 

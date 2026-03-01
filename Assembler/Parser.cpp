@@ -1142,6 +1142,7 @@ void Parser::parseSTR()
 
 			memlay.m_packetSize = asmc_WORD;
 			memlay.m_packet = new uint8_t[asmc_WORD];
+			memlay.m_regFlag = asmc::RegisterFlag::NoReg;
 
 			//TODO dynamic sized hexvalue
 			memlay.m_resPacketSize = asmc_WORD;

@@ -12,6 +12,8 @@ namespace baz
 		}		
 
 		fr.readFile(path, m_ram);
+
+		m_komut = 0;
 	}
 
 	Emu::~Emu()
@@ -31,7 +33,14 @@ namespace baz
 			{
 			case 0x01:
 				op_LOAD();
-				break;							
+				break;
+
+			case 0x10:
+			case 0x20:
+			case 0x30:
+			case 0x40:
+				op_STR();
+				break;
 			}
 
 			if ((m_komut & 0b0000'1111) == 0x02)
@@ -47,11 +56,7 @@ namespace baz
 			std::cout << "reg" << i << " : " << m_registerFile[i] << "\n";
 		}
 	}
-
 	
-
-
-
 	baz::RegisterPart Emu::getRegisterPart()
 	{
 		pc++;
@@ -99,6 +104,20 @@ namespace baz
 		return retval;		
 	}
 
+	void Emu::storeBytesToRam(uint32_t data, uint32_t adr)
+	{
+		for (int i = 3; i >= 0; i--)
+		{
+			uint32_t mask = 0xff00'0000 >> ((3 - i) * 8);
+
+			m_ram[adr] = (data & mask) >> 8 * i;
+
+			std::cout << std::hex << ((data & mask) >> 8 * i) << "\n";
+			std::cout << adr << "|" << (int)m_ram[adr] << "\n";
+			adr++;
+		}
+	}
+
 	uint32_t Emu::getBytes(uint8_t uz, uint32_t adr)
 	{
 		uint32_t retval = 0;
@@ -131,30 +150,26 @@ namespace baz
 		{
 
 		//load rx,sayi
-		case baz::LOAD_rx_sayi:
-			pc++;
+		case baz::InstructionHexVal::LOAD_rx_sayi:
+
 			value = getBytes(regPart.m_reguz);
 			m_registerFile[regPart.m_rega] = value;
 			break;
 
 		//load rx,@ry
-		case baz::LOAD_rx_regadr:						
+		case baz::InstructionHexVal::LOAD_rx_regadr:
 			m_registerFile[regPart.m_rega] = m_ram[regPart.m_regb];
 			break;
 
 		//load rx,@adr
-		case baz::LOAD_rx_adr:
-			pc++;
-			
+		case baz::InstructionHexVal::LOAD_rx_adr:
 			//adr
 			value = getBytes(baz::UzTip::REG_32);
 			m_registerFile[regPart.m_rega] = getBytes(regPart.m_reguz, value);
 			break;
 
 		//load rx,@adr+ry
-		case baz::LOAD_rx_adr_p_reg:
-			pc++;
-
+		case baz::InstructionHexVal::LOAD_rx_adr_p_reg:
 			//adr
 			value = getBytes(baz::UzTip::REG_32);
 			m_registerFile[regPart.m_rega] = getBytes(regPart.m_reguz, value + regPart.m_regb); 
@@ -194,31 +209,31 @@ namespace baz
 
 		switch (m_komut)
 		{
-			case baz::ADD_rx_sayi:
-			case baz::ADD_rx_regadr:
-			case baz::ADD_rx_adr:
-			case baz::ADD_rx_ry:
+			case baz::InstructionHexVal::ADD_rx_sayi:
+			case baz::InstructionHexVal::ADD_rx_regadr:
+			case baz::InstructionHexVal::ADD_rx_adr:
+			case baz::InstructionHexVal::ADD_rx_ry:
 				operationType = baz::OperationType::Add;
 				break;
 
-			case baz::SUB_rx_sayi:
-			case baz::SUB_rx_regadr:
-			case baz::SUB_rx_adr:
-			case baz::SUB_rx_ry:
+			case baz::InstructionHexVal::SUB_rx_sayi:
+			case baz::InstructionHexVal::SUB_rx_regadr:
+			case baz::InstructionHexVal::SUB_rx_adr:
+			case baz::InstructionHexVal::SUB_rx_ry:
 				operationType = baz::OperationType::Sub;
 				break;
 
-			case baz::MUL_rx_sayi:
-			case baz::MUL_rx_regadr:
-			case baz::MUL_rx_adr:
-			case baz::MUL_rx_ry:
+			case baz::InstructionHexVal::MUL_rx_sayi:
+			case baz::InstructionHexVal::MUL_rx_regadr:
+			case baz::InstructionHexVal::MUL_rx_adr:
+			case baz::InstructionHexVal::MUL_rx_ry:
 				operationType = baz::OperationType::Mul;
 				break;
 
-			case baz::DIV_rx_sayi:
-			case baz::DIV_rx_regadr:
-			case baz::DIV_rx_adr:
-			case baz::DIV_rx_ry:
+			case baz::InstructionHexVal::DIV_rx_sayi:
+			case baz::InstructionHexVal::DIV_rx_regadr:
+			case baz::InstructionHexVal::DIV_rx_adr:
+			case baz::InstructionHexVal::DIV_rx_ry:
 				operationType = baz::OperationType::Div;
 				break;
 		}
@@ -226,28 +241,28 @@ namespace baz
 		switch (m_komut)
 		{ 
 			//add rx,sayi
-		case baz::ADD_rx_sayi:
-		case baz::SUB_rx_sayi:
-		case baz::MUL_rx_sayi:
-		case baz::DIV_rx_sayi:			
+		case baz::InstructionHexVal::ADD_rx_sayi:
+		case baz::InstructionHexVal::SUB_rx_sayi:
+		case baz::InstructionHexVal::MUL_rx_sayi:
+		case baz::InstructionHexVal::DIV_rx_sayi:
 
 			value = getBytes(regPart.m_reguz);			
 			break;
 
 			//add rx,@ry
-		case baz::ADD_rx_regadr:
-		case baz::SUB_rx_regadr:
-		case baz::MUL_rx_regadr:
-		case baz::DIV_rx_regadr:		
+		case baz::InstructionHexVal::ADD_rx_regadr:
+		case baz::InstructionHexVal::SUB_rx_regadr:
+		case baz::InstructionHexVal::MUL_rx_regadr:
+		case baz::InstructionHexVal::DIV_rx_regadr:
 
 			value = getBytes(regPart.m_reguz, m_registerFile[regPart.m_regb]);			
 			break;
 
 			//add rx,@adr
-		case baz::ADD_rx_adr:
-		case baz::SUB_rx_adr:
-		case baz::MUL_rx_adr:
-		case baz::DIV_rx_adr:
+		case baz::InstructionHexVal::ADD_rx_adr:
+		case baz::InstructionHexVal::SUB_rx_adr:
+		case baz::InstructionHexVal::MUL_rx_adr:
+		case baz::InstructionHexVal::DIV_rx_adr:
 
 			//adr
 			value = getBytes(baz::UzTip::REG_32);
@@ -255,10 +270,10 @@ namespace baz
 			break;
 
 			//add rx,ry
-		case baz::ADD_rx_ry:
-		case baz::SUB_rx_ry:
-		case baz::MUL_rx_ry:
-		case baz::DIV_rx_ry:			
+		case baz::InstructionHexVal::ADD_rx_ry:
+		case baz::InstructionHexVal::SUB_rx_ry:
+		case baz::InstructionHexVal::MUL_rx_ry:
+		case baz::InstructionHexVal::DIV_rx_ry:
 
 			value = m_registerFile[regPart.m_regb];
 			break;
@@ -269,6 +284,50 @@ namespace baz
 
 	void Emu::op_STR()
 	{
+		uint32_t adr = 0;
+					
+		switch (m_komut)
+		{
+			//str @adr, sayi
+		case baz::InstructionHexVal::STR_adr_sayi:
+		{
+			adr = getBytes(baz::UzTip::REG_32);
+			uint32_t value = getBytes(baz::UzTip::REG_32);
+
+			//32bit => ram			
+			storeBytesToRam(value, adr);
+			break;
+		}
+		default:
+			baz::RegisterPart regPart = getRegisterPart();
+
+			switch (m_komut)
+			{
+			case baz::InstructionHexVal::STR_adr_regadr:
+			{
+				adr = getBytes(baz::UzTip::REG_32);
+
+				uint32_t mdr = getBytes(regPart.m_reguz, m_registerFile[regPart.m_rega]);
+
+				storeBytesToRam(mdr, adr);
+				break;
+			}
+			case baz::InstructionHexVal::STR_adr_rx:
+
+				adr = getBytes(baz::UzTip::REG_32);
+
+				storeBytesToRam(m_registerFile[regPart.m_rega], adr);
+				break;
+
+			case baz::InstructionHexVal::STR_adr_p_reg_ry:
+
+				adr = getBytes(baz::UzTip::REG_32);
+
+				storeBytesToRam(m_registerFile[regPart.m_regb], adr + m_registerFile[regPart.m_rega]); 
+				break;
+			}
+			break;
+		}
 	}
 
 	void Emu::op_MOV()

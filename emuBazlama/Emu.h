@@ -75,12 +75,17 @@ namespace baz
 		uint8_t m_komut;
 		uint8_t* m_ram = new uint8_t[RAM_Size];
 
-
+		//pc++ returns reguz,rega,regb
 		baz::RegisterPart getRegisterPart();
+
 		void calculate(baz::OperationType type, uint32_t& reg, uint32_t value);
 
 		uint32_t getBytes(uint8_t uz, uint32_t adr);
+
+		//pc++
 		uint32_t getBytes(uint8_t uz);
+
+		void storeBytesToRam(uint32_t data, uint32_t adr);
 		
 		//-----------------------------------//
 		//-----------------------------------//

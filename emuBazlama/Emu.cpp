@@ -49,9 +49,21 @@ namespace baz
 				op_MOV();
 				break;
 
-			case baz::CALL_adr:
-			case baz::CALL_regadr:
+			case baz::InstructionHexVal::CALL_adr:
+			case baz::InstructionHexVal::CALL_regadr:
 				op_CALL();
+				break;
+
+			case baz::InstructionHexVal::RET:
+				op_RET();
+				break;
+
+			case baz::InstructionHexVal::PUSH_rx:
+				op_PUSH();
+				break;
+
+			case baz::InstructionHexVal::POP_rx:
+				op_POP();
 				break;
 			}
 
@@ -298,6 +310,9 @@ namespace baz
 
 	void Emu::op_RET()
 	{
+		m_registerFile[baz::RegName::Sp]--;
+		
+		pc = m_ram[m_registerFile[baz::RegName::Sp]];
 	}
 
 	void Emu::op_IRET()
@@ -306,10 +321,20 @@ namespace baz
 
 	void Emu::op_PUSH()
 	{
+		baz::RegisterPart regPart = getRegisterPart();
+
+		m_ram[m_registerFile[baz::RegName::Sp]] = m_registerFile[regPart.m_rega];
+
+		m_registerFile[baz::RegName::Sp]++;
 	}
 
 	void Emu::op_POP()
 	{
+		baz::RegisterPart regPart = getRegisterPart();
+
+		m_registerFile[baz::RegName::Sp]--;
+
+		m_registerFile[regPart.m_rega] = m_ram[m_registerFile[baz::RegName::Sp]];		
 	}
 
 	void Emu::op_PUSHA()

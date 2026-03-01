@@ -19,6 +19,13 @@
 
 namespace baz
 {
+	enum FlagReg
+	{
+		Eqeq = 1,
+		Less = 2,
+		Greater = 4
+	};
+
 	enum RegName
 	{
 		Sp = 7,	//stack pointer
@@ -40,7 +47,7 @@ namespace baz
 		REG_32 = 4	//o
 	};
 
-	enum InstructionHexVal
+	enum Komut
 	{
 		NOP =			   0x00,	LOAD_rx_sayi =		0x01,	ADD_rx_sayi =	 0x02,	SHL_rx_sayi	  = 0x03,	CALL_regadr = 0x04,
 		STR_adr_sayi =     0x10,	LOAD_rx_regadr =    0x11,	ADD_rx_regadr =  0x12,	SHL_rx_ry	  = 0x13,	CALL_adr	= 0x14,

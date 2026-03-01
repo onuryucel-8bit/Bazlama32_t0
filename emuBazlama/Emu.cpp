@@ -31,45 +31,45 @@ namespace baz
 
 			switch (m_komut)
 			{
-			case baz::InstructionHexVal::LOAD_rx_adr:
-			case baz::InstructionHexVal::LOAD_rx_adr_p_reg:
-			case baz::InstructionHexVal::LOAD_rx_regadr:
-			case baz::InstructionHexVal::LOAD_rx_sayi:
+			case baz::Komut::LOAD_rx_adr:
+			case baz::Komut::LOAD_rx_adr_p_reg:
+			case baz::Komut::LOAD_rx_regadr:
+			case baz::Komut::LOAD_rx_sayi:
 				op_LOAD();
 				break;
 
-			case baz::InstructionHexVal::STR_adr_p_reg_ry:
-			case baz::InstructionHexVal::STR_adr_regadr:
-			case baz::InstructionHexVal::STR_adr_rx:
-			case baz::InstructionHexVal::STR_adr_sayi:			
+			case baz::Komut::STR_adr_p_reg_ry:
+			case baz::Komut::STR_adr_regadr:
+			case baz::Komut::STR_adr_rx:
+			case baz::Komut::STR_adr_sayi:			
 				op_STR();
 				break;
 
-			case baz::InstructionHexVal::MOV:
+			case baz::Komut::MOV:
 				op_MOV();
 				break;
 
-			case baz::InstructionHexVal::CALL_adr:
-			case baz::InstructionHexVal::CALL_regadr:
+			case baz::Komut::CALL_adr:
+			case baz::Komut::CALL_regadr:
 				op_CALL();
 				break;
 
-			case baz::InstructionHexVal::RET:
+			case baz::Komut::RET:
 				op_RET();
 				break;
 
-			case baz::InstructionHexVal::PUSH_rx:
+			case baz::Komut::PUSH_rx:
 				op_PUSH();
 				break;
 
-			case baz::InstructionHexVal::POP_rx:
+			case baz::Komut::POP_rx:
 				op_POP();
 				break;
 
-			case baz::InstructionHexVal::SHL_rx_ry:
-			case baz::InstructionHexVal::SHL_rx_sayi:
-			case baz::InstructionHexVal::SHR_rx_ry:
-			case baz::InstructionHexVal::SHR_rx_sayi:
+			case baz::Komut::SHL_rx_ry:
+			case baz::Komut::SHL_rx_sayi:
+			case baz::Komut::SHR_rx_ry:
+			case baz::Komut::SHR_rx_sayi:
 				op_Shift();
 				break;
 
@@ -99,26 +99,26 @@ namespace baz
 		{
 
 		//load rx,sayi
-		case baz::InstructionHexVal::LOAD_rx_sayi:
+		case baz::Komut::LOAD_rx_sayi:
 
 			value = getBytes(regPart.m_reguz);
 			m_registerFile[regPart.m_rega] = value;
 			break;
 
 		//load rx,@ry
-		case baz::InstructionHexVal::LOAD_rx_regadr:
+		case baz::Komut::LOAD_rx_regadr:
 			m_registerFile[regPart.m_rega] = m_ram[regPart.m_regb];
 			break;
 
 		//load rx,@adr
-		case baz::InstructionHexVal::LOAD_rx_adr:
+		case baz::Komut::LOAD_rx_adr:
 			//adr
 			value = getBytes(baz::UzTip::REG_32);
 			m_registerFile[regPart.m_rega] = getBytes(regPart.m_reguz, value);
 			break;
 
 		//load rx,@adr+ry
-		case baz::InstructionHexVal::LOAD_rx_adr_p_reg:
+		case baz::Komut::LOAD_rx_adr_p_reg:
 			//adr
 			value = getBytes(baz::UzTip::REG_32);
 			m_registerFile[regPart.m_rega] = getBytes(regPart.m_reguz, value + regPart.m_regb); 
@@ -158,31 +158,31 @@ namespace baz
 
 		switch (m_komut)
 		{
-			case baz::InstructionHexVal::ADD_rx_sayi:
-			case baz::InstructionHexVal::ADD_rx_regadr:
-			case baz::InstructionHexVal::ADD_rx_adr:
-			case baz::InstructionHexVal::ADD_rx_ry:
+			case baz::Komut::ADD_rx_sayi:
+			case baz::Komut::ADD_rx_regadr:
+			case baz::Komut::ADD_rx_adr:
+			case baz::Komut::ADD_rx_ry:
 				operationType = baz::OperationType::Add;
 				break;
 
-			case baz::InstructionHexVal::SUB_rx_sayi:
-			case baz::InstructionHexVal::SUB_rx_regadr:
-			case baz::InstructionHexVal::SUB_rx_adr:
-			case baz::InstructionHexVal::SUB_rx_ry:
+			case baz::Komut::SUB_rx_sayi:
+			case baz::Komut::SUB_rx_regadr:
+			case baz::Komut::SUB_rx_adr:
+			case baz::Komut::SUB_rx_ry:
 				operationType = baz::OperationType::Sub;
 				break;
 
-			case baz::InstructionHexVal::MUL_rx_sayi:
-			case baz::InstructionHexVal::MUL_rx_regadr:
-			case baz::InstructionHexVal::MUL_rx_adr:
-			case baz::InstructionHexVal::MUL_rx_ry:
+			case baz::Komut::MUL_rx_sayi:
+			case baz::Komut::MUL_rx_regadr:
+			case baz::Komut::MUL_rx_adr:
+			case baz::Komut::MUL_rx_ry:
 				operationType = baz::OperationType::Mul;
 				break;
 
-			case baz::InstructionHexVal::DIV_rx_sayi:
-			case baz::InstructionHexVal::DIV_rx_regadr:
-			case baz::InstructionHexVal::DIV_rx_adr:
-			case baz::InstructionHexVal::DIV_rx_ry:
+			case baz::Komut::DIV_rx_sayi:
+			case baz::Komut::DIV_rx_regadr:
+			case baz::Komut::DIV_rx_adr:
+			case baz::Komut::DIV_rx_ry:
 				operationType = baz::OperationType::Div;
 				break;
 		}
@@ -190,28 +190,28 @@ namespace baz
 		switch (m_komut)
 		{ 
 			//add rx,sayi
-		case baz::InstructionHexVal::ADD_rx_sayi:
-		case baz::InstructionHexVal::SUB_rx_sayi:
-		case baz::InstructionHexVal::MUL_rx_sayi:
-		case baz::InstructionHexVal::DIV_rx_sayi:
+		case baz::Komut::ADD_rx_sayi:
+		case baz::Komut::SUB_rx_sayi:
+		case baz::Komut::MUL_rx_sayi:
+		case baz::Komut::DIV_rx_sayi:
 
 			value = getBytes(regPart.m_reguz);			
 			break;
 
 			//add rx,@ry
-		case baz::InstructionHexVal::ADD_rx_regadr:
-		case baz::InstructionHexVal::SUB_rx_regadr:
-		case baz::InstructionHexVal::MUL_rx_regadr:
-		case baz::InstructionHexVal::DIV_rx_regadr:
+		case baz::Komut::ADD_rx_regadr:
+		case baz::Komut::SUB_rx_regadr:
+		case baz::Komut::MUL_rx_regadr:
+		case baz::Komut::DIV_rx_regadr:
 
 			value = getBytes(regPart.m_reguz, m_registerFile[regPart.m_regb]);			
 			break;
 
 			//add rx,@adr
-		case baz::InstructionHexVal::ADD_rx_adr:
-		case baz::InstructionHexVal::SUB_rx_adr:
-		case baz::InstructionHexVal::MUL_rx_adr:
-		case baz::InstructionHexVal::DIV_rx_adr:
+		case baz::Komut::ADD_rx_adr:
+		case baz::Komut::SUB_rx_adr:
+		case baz::Komut::MUL_rx_adr:
+		case baz::Komut::DIV_rx_adr:
 
 			//adr
 			value = getBytes(baz::UzTip::REG_32);
@@ -219,10 +219,10 @@ namespace baz
 			break;
 
 			//add rx,ry
-		case baz::InstructionHexVal::ADD_rx_ry:
-		case baz::InstructionHexVal::SUB_rx_ry:
-		case baz::InstructionHexVal::MUL_rx_ry:
-		case baz::InstructionHexVal::DIV_rx_ry:
+		case baz::Komut::ADD_rx_ry:
+		case baz::Komut::SUB_rx_ry:
+		case baz::Komut::MUL_rx_ry:
+		case baz::Komut::DIV_rx_ry:
 
 			value = m_registerFile[regPart.m_regb];
 			break;
@@ -238,7 +238,7 @@ namespace baz
 		switch (m_komut)
 		{
 			//str @adr, sayi
-		case baz::InstructionHexVal::STR_adr_sayi:
+		case baz::Komut::STR_adr_sayi:
 		{
 			adr = getBytes(baz::UzTip::REG_32);
 			uint32_t value = getBytes(baz::UzTip::REG_32);
@@ -252,7 +252,7 @@ namespace baz
 
 			switch (m_komut)
 			{
-			case baz::InstructionHexVal::STR_adr_regadr:
+			case baz::Komut::STR_adr_regadr:
 			{
 				adr = getBytes(baz::UzTip::REG_32);
 
@@ -262,14 +262,14 @@ namespace baz
 
 				break;
 			}			
-			case baz::InstructionHexVal::STR_adr_rx:
+			case baz::Komut::STR_adr_rx:
 
 				adr = getBytes(baz::UzTip::REG_32);
 
 				storeBytesToRam(m_registerFile[regPart.m_rega], adr);
 				break;
 
-			case baz::InstructionHexVal::STR_adr_p_reg_ry:
+			case baz::Komut::STR_adr_p_reg_ry:
 
 				adr = getBytes(baz::UzTip::REG_32);
 
@@ -444,21 +444,21 @@ namespace baz
 
 		switch (m_komut)
 		{
-		case baz::InstructionHexVal::SHL_rx_ry:
+		case baz::Komut::SHL_rx_ry:
 			m_registerFile[regPart.m_rega] <<= m_registerFile[regPart.m_regb];
 			break;
 
-		case baz::InstructionHexVal::SHL_rx_sayi:
+		case baz::Komut::SHL_rx_sayi:
 			value = getBytes(regPart.m_reguz);
 
 			m_registerFile[regPart.m_rega] <<= value;
 			break;
 
-		case baz::InstructionHexVal::SHR_rx_ry:
+		case baz::Komut::SHR_rx_ry:
 			m_registerFile[regPart.m_rega] >>= m_registerFile[regPart.m_regb];
 			break;
 
-		case baz::InstructionHexVal::SHR_rx_sayi:
+		case baz::Komut::SHR_rx_sayi:
 			value = getBytes(regPart.m_reguz);
 
 			m_registerFile[regPart.m_rega] >>= value;
@@ -468,11 +468,69 @@ namespace baz
 	
 	void Emu::op_CMP()
 	{
+		baz::RegisterPart regPart = getRegisterPart();
+
 		switch (m_komut)
 		{
+			//TODO uztip
+		case baz::Komut::CMP_rx_ry:
+			if (m_registerFile[regPart.m_rega] == m_registerFile[regPart.m_regb])
+			{
+				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Eqeq;
+			}
+			if(m_registerFile[regPart.m_rega] < m_registerFile[regPart.m_regb])
+			{
+				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Less;
+			}
+			if (m_registerFile[regPart.m_rega] > m_registerFile[regPart.m_regb])
+			{
+				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Greater;
+			}
 
+			break;
+
+		case baz::Komut::CMP_rx_regadr:
+		{
+			uint32_t adr = m_registerFile[regPart.m_regb];
+
+			uint32_t value = getBytes(baz::UzTip::REG_32, adr);
+
+			if (m_registerFile[regPart.m_rega] == value)
+			{
+				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Eqeq;
+			}
+			if (m_registerFile[regPart.m_rega] < value)
+			{
+				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Less;
+			}
+			if (m_registerFile[regPart.m_rega] > value)
+			{
+				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Greater;
+			}
+			break;
+		}			
+		case baz::Komut::CMP_rx_sayi:			
+			uint32_t value = getBytes(regPart.m_reguz);
+
+			if (m_registerFile[regPart.m_rega] == value)
+			{
+				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Eqeq;
+			}
+			if (m_registerFile[regPart.m_rega] < value)
+			{
+				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Less;
+			}
+			if (m_registerFile[regPart.m_rega] > value)
+			{
+				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Greater;
+			}
+			break;
 		}
 	}
+
+	//============================================================================================================//
+	//============================================================================================================//
+	//============================================================================================================//
 
 	baz::RegisterPart Emu::getRegisterPart()
 	{

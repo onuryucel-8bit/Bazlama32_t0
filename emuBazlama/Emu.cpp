@@ -65,6 +65,14 @@ namespace baz
 			case baz::InstructionHexVal::POP_rx:
 				op_POP();
 				break;
+
+			case baz::InstructionHexVal::SHL_rx_ry:
+			case baz::InstructionHexVal::SHL_rx_sayi:
+			case baz::InstructionHexVal::SHR_rx_ry:
+			case baz::InstructionHexVal::SHR_rx_sayi:
+				op_Shift();
+				break;
+
 			}
 
 			if ((m_komut & 0b0000'1111) == 0x02)
@@ -402,28 +410,62 @@ namespace baz
 
 	void Emu::op_AND()
 	{
+		baz::RegisterPart regPart = getRegisterPart();
+
+		m_registerFile[regPart.m_rega] &= m_registerFile[regPart.m_regb];
 	}
 
 	void Emu::op_OR()
 	{
+		baz::RegisterPart regPart = getRegisterPart();
+
+		m_registerFile[regPart.m_rega] |= m_registerFile[regPart.m_regb];
 	}
 
 	void Emu::op_NOT()
 	{
+		baz::RegisterPart regPart = getRegisterPart();
+
+		m_registerFile[regPart.m_rega] = ~m_registerFile[regPart.m_rega];
 	}
 
 	void Emu::op_XOR()
 	{
+		baz::RegisterPart regPart = getRegisterPart();
+
+		m_registerFile[regPart.m_rega] ^= m_registerFile[regPart.m_rega];
 	}
 
-	void Emu::op_SHL()
+	void Emu::op_Shift()
 	{
-	}
+		baz::RegisterPart regPart = getRegisterPart();
 
-	void Emu::op_SHR()
-	{
-	}
+		uint32_t value;
 
+		switch (m_komut)
+		{
+		case baz::InstructionHexVal::SHL_rx_ry:
+			m_registerFile[regPart.m_rega] <<= m_registerFile[regPart.m_regb];
+			break;
+
+		case baz::InstructionHexVal::SHL_rx_sayi:
+			value = getBytes(regPart.m_reguz);
+
+			m_registerFile[regPart.m_rega] <<= value;
+			break;
+
+		case baz::InstructionHexVal::SHR_rx_ry:
+			m_registerFile[regPart.m_rega] >>= m_registerFile[regPart.m_regb];
+			break;
+
+		case baz::InstructionHexVal::SHR_rx_sayi:
+			value = getBytes(regPart.m_reguz);
+
+			m_registerFile[regPart.m_rega] >>= value;
+			break;
+		}
+	}
+	
 	void Emu::op_CMP()
 	{
 		switch (m_komut)

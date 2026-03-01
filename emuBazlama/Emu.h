@@ -128,8 +128,7 @@ namespace baz
 		void op_OR();
 		void op_NOT();
 		void op_XOR();
-		void op_SHL();
-		void op_SHR();
+		void op_Shift();
 		void op_CMP();
 
 	};	

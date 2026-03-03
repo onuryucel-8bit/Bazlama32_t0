@@ -14,15 +14,13 @@ namespace baz
 		~FileReader();
 		
 		void placeFiletoRAM();
-		void readFile(std::string path, uint8_t* ram);
-
-		uint32_t getBytes(uint8_t uz, uint32_t& adres);
+		void readFile(std::string path, std::vector<uint8_t>* ram);
 
 	private:
 		void nextChar();
 		std::string getNextLine();
 
-		uint8_t* m_ram;
+		std::vector<uint8_t>* m_ram;
 
 		std::string source;
 		char m_currentChar;

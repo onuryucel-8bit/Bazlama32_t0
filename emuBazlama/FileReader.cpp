@@ -14,7 +14,7 @@ namespace baz
 	{
 	}
 
-	void FileReader::readFile(std::string path, uint8_t* ram)
+	void FileReader::readFile(std::string path, std::vector<uint8_t>* ram)
 	{
 		m_ram = ram;
 
@@ -88,7 +88,7 @@ namespace baz
 			//get hex value of the command
 			str = getNextLine();
 
-			m_ram[index] = rdx::hexToDec(str);
+			(*m_ram)[index] = (uint8_t)rdx::hexToDec(str);
 		}
 
 	}	

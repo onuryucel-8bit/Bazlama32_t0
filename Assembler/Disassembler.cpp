@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Disassembler.h"
 
 namespace asmc

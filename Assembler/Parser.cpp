@@ -80,8 +80,9 @@ Parser::Parser(asmc::Lexer& lexer)
 
 	//REG-RAM
 	m_opcodeHexTable[asmc::TokenType::LOAD] = 0x01;
-	m_opcodeHexTable[asmc::TokenType::STR] =  0x10;		
+	m_opcodeHexTable[asmc::TokenType::STR] =  0x10;	
 	m_opcodeHexTable[asmc::TokenType::MOV] =  0x41;
+
 
 	//STACK 
 	m_opcodeHexTable[asmc::TokenType::CALL] = 0x04;
@@ -1092,12 +1093,11 @@ void Parser::parseSTR()
 
 	uint8_t reguz, rega, regb;
 
-	//str @adr+rx, @ry
+	//str @adr+rx, $ruy
 	if (adrPart.m_type == asmc::TokenType::ADR_P_REG)
 	{
 		
-		opcode = asmc_CombineModBits(asmc::TokenType::STR, asmc_MOD_Adr_P_Reg);
-		memlay.m_regFlag = asmc::RegisterFlag::NoReg;
+		opcode = asmc_CombineModBits(asmc::TokenType::STR, asmc_MOD_Adr_P_Reg);		
 		
 		asmc::PacketAdrPReg padrpreg = getAdr_P_RegPart(m_currentToken.m_text);			
 
@@ -1106,10 +1106,11 @@ void Parser::parseSTR()
 		//----------//
 		rega = (uint8_t)padrpreg.m_regPart;
 		regb = rdx::hexToDec8(m_currentToken.m_text);
+		reguz = m_currentToken.m_regType;
 		//----------//
 		m_ramLocation++;
 
-		memlay.m_regPart = asmc_CombineRegPart(memlay.m_regPart, 0, rega, regb);
+		memlay.m_regPart = asmc_CombineRegPart(memlay.m_regPart, reguz, rega, regb);
 
 		memlay.m_packetSize = asmc_WORD;
 		memlay.m_packet = new uint8_t[asmc_WORD];
@@ -1723,7 +1724,7 @@ void Parser::parseJMP()
 		uint32_t funcAdr = m_symbolTable[m_currentToken].m_ramIndex;
 		for (size_t i = 0; i < 4; i++)
 		{
-			memlay.m_packet[i] = funcAdr & (0xff << (8 * i));
+			memlay.m_packet[i] = funcAdr & (0xff00'0000 >> (8 * i));
 		}		
 
 		m_output.push_back(memlay);

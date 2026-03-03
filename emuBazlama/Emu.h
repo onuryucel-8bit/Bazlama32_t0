@@ -19,6 +19,10 @@
 
 namespace baz
 {
+	constexpr size_t KB = 1024;
+	constexpr size_t MB = 1024 * KB;
+	constexpr size_t GB = 1024 * MB;
+
 	enum FlagReg
 	{
 		Eqeq = 1,
@@ -83,29 +87,28 @@ namespace baz
 		~Emu();
 
 		void run();
-
+		std::vector<uint8_t> m_ram;
+		uint32_t getBytes(uint8_t uz, uint32_t adr);
 	private:
-
-		baz::FileReader fr;
-		
-		const int RAM_Size = 256;
 				
+		baz::FileReader fr;
+								
 		uint32_t pc = 0;
 		uint32_t m_registerFile[8] = {};
 		uint8_t m_komut;
-		uint8_t* m_ram = new uint8_t[RAM_Size];
+		
 
 		//pc++ returns reguz,rega,regb
 		baz::RegisterPart getRegisterPart();
 
 		void calculate(baz::OperationType type, uint32_t& reg, uint32_t value);
 
-		uint32_t getBytes(uint8_t uz, uint32_t adr);
+		
 
 		//pc++
 		uint32_t getBytes(uint8_t uz);
 
-		void storeBytesToRam(uint32_t data, uint32_t adr);
+		void storeBytesToRam(uint32_t data, uint32_t adr, baz::UzTip uz);
 		
 		//-----------------------------------//
 		//-----------------------------------//

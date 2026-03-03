@@ -6,12 +6,9 @@ namespace baz
 {
 	Emu::Emu(std::string path)
 	{
-		for (size_t i = 0; i < RAM_Size; i++)
-		{
-			m_ram[i] = 0;
-		}		
-
-		fr.readFile(path, m_ram);
+		m_ram.resize(baz::MB * 1);
+		//800*600*2 => grafik karti
+		fr.readFile(path, &m_ram);
 
 		m_komut = 0;
 	}
@@ -22,64 +19,76 @@ namespace baz
 
 	void Emu::run()
 	{		
-		//source = readFile("emu.txt");
-		//placeFiletoRAM();		
-
 		while (m_ram[pc] != 0)
 		{
 			m_komut = m_ram[pc];			
-
-			switch (m_komut)
-			{
-			case baz::Komut::LOAD_rx_adr:
-			case baz::Komut::LOAD_rx_adr_p_reg:
-			case baz::Komut::LOAD_rx_regadr:
-			case baz::Komut::LOAD_rx_sayi:
-				op_LOAD();
-				break;
-
-			case baz::Komut::STR_adr_p_reg_ry:
-			case baz::Komut::STR_adr_regadr:
-			case baz::Komut::STR_adr_rx:
-			case baz::Komut::STR_adr_sayi:			
-				op_STR();
-				break;
-
-			case baz::Komut::MOV:
-				op_MOV();
-				break;
-
-			case baz::Komut::CALL_adr:
-			case baz::Komut::CALL_regadr:
-				op_CALL();
-				break;
-
-			case baz::Komut::RET:
-				op_RET();
-				break;
-
-			case baz::Komut::PUSH_rx:
-				op_PUSH();
-				break;
-
-			case baz::Komut::POP_rx:
-				op_POP();
-				break;
-
-			case baz::Komut::SHL_rx_ry:
-			case baz::Komut::SHL_rx_sayi:
-			case baz::Komut::SHR_rx_ry:
-			case baz::Komut::SHR_rx_sayi:
-				op_Shift();
-				break;
-
-			}
-
+			
 			if ((m_komut & 0b0000'1111) == 0x02)
 			{
 				op_Arithmetic();
 			}
+			else
+			{
+				switch (m_komut)
+				{
+				case baz::Komut::LOAD_rx_adr:
+				case baz::Komut::LOAD_rx_adr_p_reg:
+				case baz::Komut::LOAD_rx_regadr:
+				case baz::Komut::LOAD_rx_sayi:
+					op_LOAD();
+					break;
 
+				case baz::Komut::STR_adr_p_reg_ry:
+				case baz::Komut::STR_adr_regadr:
+				case baz::Komut::STR_adr_rx:
+				case baz::Komut::STR_adr_sayi:
+					op_STR();
+					break;
+
+				case baz::Komut::MOV:
+					op_MOV();
+					break;
+
+				case baz::Komut::CALL_adr:
+				case baz::Komut::CALL_regadr:
+					op_CALL();
+					break;
+
+				case baz::Komut::RET:
+					op_RET();
+					break;
+
+				case baz::Komut::PUSH_rx:
+					op_PUSH();
+					break;
+
+				case baz::Komut::POP_rx:
+					op_POP();
+					break;
+
+				case baz::Komut::SHL_rx_ry:
+				case baz::Komut::SHL_rx_sayi:
+				case baz::Komut::SHR_rx_ry:
+				case baz::Komut::SHR_rx_sayi:
+					op_Shift();
+					break;
+
+				case baz::Komut::CMP_rx_regadr:
+				case baz::Komut::CMP_rx_ry:
+				case baz::Komut::CMP_rx_sayi:
+					op_CMP();
+					break;
+
+				case baz::Komut::JMP:
+					op_JMP();
+					break;
+
+				case baz::Komut::JNE:
+					op_JNE();
+					break;
+
+				}
+			}			
 			pc++;
 		}
 
@@ -244,7 +253,7 @@ namespace baz
 			uint32_t value = getBytes(baz::UzTip::REG_32);
 
 			//32bit => ram			
-			storeBytesToRam(value, adr);
+			storeBytesToRam(value, adr, baz::UzTip::REG_32);
 			break;
 		}
 		default:
@@ -258,7 +267,7 @@ namespace baz
 
 				uint32_t mdr = getBytes(regPart.m_reguz, m_registerFile[regPart.m_rega]);
 
-				storeBytesToRam(mdr, adr);	
+				storeBytesToRam(mdr, adr, regPart.m_reguz);	
 
 				break;
 			}			
@@ -266,14 +275,14 @@ namespace baz
 
 				adr = getBytes(baz::UzTip::REG_32);
 
-				storeBytesToRam(m_registerFile[regPart.m_rega], adr);
+				storeBytesToRam(m_registerFile[regPart.m_rega], adr, regPart.m_reguz);
 				break;
 
 			case baz::Komut::STR_adr_p_reg_ry:
 
 				adr = getBytes(baz::UzTip::REG_32);
 
-				storeBytesToRam(m_registerFile[regPart.m_regb], adr + m_registerFile[regPart.m_rega]); 
+				storeBytesToRam(m_registerFile[regPart.m_regb], adr + m_registerFile[regPart.m_rega], regPart.m_reguz);
 				break;
 			}
 			break;
@@ -347,17 +356,29 @@ namespace baz
 
 	void Emu::op_PUSHA()
 	{
+		//r0,r1,r2,r3,r4,r5,r6 => ram
+		for (size_t i = 0; i < 7; i++)
+		{
+			m_ram[m_registerFile[baz::RegName::Sp]] = m_registerFile[i];
+			m_registerFile[baz::RegName::Sp]++;
+		}
+		
 	}
 
 	void Emu::op_POPA()
 	{
+		for (int i = 6; i >= 0; i--)
+		{
+			m_registerFile[baz::RegName::Sp]--;			
+			m_registerFile[i] = m_ram[m_registerFile[baz::RegName::Sp]];
+		}
 	}
 
 	void Emu::op_JMP()
 	{
 		uint32_t adr = getBytes(baz::UzTip::REG_32);
 
-		pc = adr;
+		pc = adr - 1;
 	}
 
 	void Emu::op_JNE()
@@ -366,7 +387,7 @@ namespace baz
 
 		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_eqeq) == baz_false)
 		{
-			pc = adr;
+			pc = adr - 1;
 		}
 	}
 
@@ -376,7 +397,7 @@ namespace baz
 
 		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_eqeq) == baz_true)
 		{
-			pc = adr;
+			pc = adr - 1;
 		}
 	}
 
@@ -386,7 +407,7 @@ namespace baz
 
 		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_greater) == baz_true)
 		{
-			pc = adr;
+			pc = adr - 1;
 		}
 	}
 
@@ -396,7 +417,7 @@ namespace baz
 
 		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_less) == baz_true)
 		{
-			pc = adr;
+			pc = adr - 1;
 		}
 	}
 
@@ -579,16 +600,34 @@ namespace baz
 		return retval;
 	}
 
-	void Emu::storeBytesToRam(uint32_t data, uint32_t adr)
+	void Emu::storeBytesToRam(uint32_t data, uint32_t adr, baz::UzTip uz)
 	{
-		for (int i = 3; i >= 0; i--)
+		int i = 0;
+
+		switch (uz)
+		{
+		case baz::UzTip::REG_32:
+			i = 3;
+			break;
+
+		case baz::UzTip::REG_16:
+			i = 1;
+			break;
+
+		case baz::UzTip::REG_8:
+			i = 0;
+			break;
+		}
+		
+
+		for (; i >= 0; i--)
 		{
 			uint32_t mask = 0xff00'0000 >> ((3 - i) * 8);
 
 			m_ram[adr] = (data & mask) >> 8 * i;
 
-			std::cout << std::hex << ((data & mask) >> 8 * i) << "\n";
-			std::cout << adr << "|" << (int)m_ram[adr] << "\n";
+			//std::cout << std::hex << ((data & mask) >> 8 * i) << "\n";
+			//std::cout << adr << "|" << (int)m_ram[adr] << "\n";
 			adr++;
 		}
 	}

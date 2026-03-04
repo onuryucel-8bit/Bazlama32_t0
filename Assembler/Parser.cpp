@@ -101,6 +101,11 @@ Parser::Parser(asmc::Lexer& lexer)
 	m_opcodeHexTable[asmc::TokenType::MUL] = 0x82;
 	m_opcodeHexTable[asmc::TokenType::DIV] = 0xc2;
 
+	m_opcodeHexTable[asmc::TokenType::FADD] = 0x06;
+	m_opcodeHexTable[asmc::TokenType::FSUB] = 0x46;
+	m_opcodeHexTable[asmc::TokenType::FMUL] = 0x86;
+	m_opcodeHexTable[asmc::TokenType::FDIV] = 0xc6;
+
 	m_opcodeHexTable[asmc::TokenType::AND] = 0x43;
 	m_opcodeHexTable[asmc::TokenType::OR] =  0x63;
 	m_opcodeHexTable[asmc::TokenType::XOR] = 0x73;
@@ -110,7 +115,11 @@ Parser::Parser(asmc::Lexer& lexer)
 	m_opcodeHexTable[asmc::TokenType::SHR] = 0x23;
 			
 	m_opcodeHexTable[asmc::TokenType::CMP] = 0x83;
+	m_opcodeHexTable[asmc::TokenType::FCMP] = 0x07;
 
+	m_opcodeHexTable[asmc::TokenType::ITOF] = 0x47;
+	m_opcodeHexTable[asmc::TokenType::FTOI] = 0x57;
+	
 	//JUMP
 	m_opcodeHexTable[asmc::TokenType::JMP] = 0x50;
 	m_opcodeHexTable[asmc::TokenType::JNE] = 0x60;
@@ -391,7 +400,7 @@ void Parser::checkTables()
 void Parser::program()
 {
 	
-	if (m_currentToken.m_type > asmc::TokenType::LABEL || m_currentToken.m_type < 0)
+	/*if (m_currentToken.m_type > asmc::TokenType::LABEL || m_currentToken.m_type < 0)
 	{
 		printError("Undefined token");
 	}
@@ -399,11 +408,122 @@ void Parser::program()
 	{
 		(this->*m_parserFuncs[m_currentToken.m_type])();
 	}
-
+	*/
 
 	switch (m_currentToken.m_type)
 	{
+	case asmc::TokenType::NOP:
+		parseNOP();
+		break;
 
+	case asmc::TokenType::INCLUDE:
+		parseINCLUDE();
+		break;
+
+	case asmc::TokenType::ORIGIN:
+		parseORIGIN();
+		break;
+
+	case asmc::TokenType::DB:
+		parseDB();
+		break;
+
+	case asmc::TokenType::DEFINE:
+		parseDEFINE();
+		break;
+
+	case asmc::TokenType::LOAD:
+		parseLOAD();
+		break;
+
+	case asmc::TokenType::STR:
+		parseSTR();
+		break;
+
+	case asmc::TokenType::MOV:
+		parseMOV();
+		break;
+
+	case asmc::TokenType::CALL:
+		parseCALL();
+		break;
+
+	case asmc::TokenType::RET:
+		parseRET();
+		break;
+
+	case asmc::TokenType::PUSH:
+		parsePUSH();
+		break;
+
+	case asmc::TokenType::POP:
+		parsePOP();
+		break;
+
+	case asmc::TokenType::FUNC:
+		parseFUNC();
+		break;
+
+	case asmc::TokenType::KWAIT:
+		parseKWAIT();
+		break;
+
+	case asmc::TokenType::MWE:
+		parseMWE();
+		break;
+
+	case asmc::TokenType::MR:
+		parseMR();
+		break;
+		
+	case asmc::TokenType::ADD:
+	case asmc::TokenType::SUB:
+	case asmc::TokenType::MUL:
+	case asmc::TokenType::DIV:
+	case asmc::TokenType::CMP:
+	case asmc::TokenType::FCMP:
+	case asmc::TokenType::FADD:
+	case asmc::TokenType::FSUB:
+	case asmc::TokenType::FDIV:
+	case asmc::TokenType::FMUL:
+		parseArithmeticPart();
+		break;
+		
+	case asmc::TokenType::SHL:
+	case asmc::TokenType::SHR:
+	case asmc::TokenType::AND:
+	case asmc::TokenType::OR:
+	case asmc::TokenType::XOR:
+		parseLogicPart();
+		break;
+
+	case asmc::TokenType::NOT:
+		parseNOT();
+		break;
+		
+	case asmc::TokenType::JMP:
+	case asmc::TokenType::JNE:
+	case asmc::TokenType::JE:
+	case asmc::TokenType::JG:
+	case asmc::TokenType::JL:
+		parseJMP();
+		break;
+
+	case asmc::TokenType::LABEL:
+		parseLabel();
+		break;
+
+	case asmc::TokenType::ITOF:
+		parseITOF();
+		break;
+
+	case asmc::TokenType::FTOI:
+		parseFTOI();
+		break;
+
+	default:
+		printError("Unknown instruction");
+		break;
 	}
 
 }
@@ -1745,6 +1865,59 @@ void Parser::parseJMP()
 
 		m_unresolvedTable[m_currentToken].push_back(entry);
 	}	
+}
+
+void Parser::parseITOF()
+{
+	//TODO check peektoken
+
+	if (m_peekToken.m_type != asmc::TokenType::REGISTER)
+	{
+		printError("unexpected operand");
+		return;
+	}
+
+	asmc::MemoryLayout memlay;
+
+	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::ITOF];
+	memlay.m_ramIndex = m_ramLocation;
+	
+	moveCurrentToken();
+
+	//------------//
+	uint8_t rega = rdx::hexToDec8(m_currentToken.m_text);
+	memlay.m_regPart = asmc_CombineRegPart(memlay.m_regPart, asmc::UzTip::REG_32, rega, 0);
+	m_ramLocation++;
+	//------------//
+
+	m_output.push_back(memlay);
+
+}
+
+void Parser::parseFTOI()
+{
+	//TODO check peektoken
+
+	if (m_peekToken.m_type != asmc::TokenType::REGISTER)
+	{
+		printError("unexpected operand");
+		return;
+	}
+
+	asmc::MemoryLayout memlay;
+
+	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::FTOI];
+	memlay.m_ramIndex = m_ramLocation;
+
+	moveCurrentToken();
+
+	//------------//
+	uint8_t rega = rdx::hexToDec8(m_currentToken.m_text);
+	memlay.m_regPart = asmc_CombineRegPart(memlay.m_regPart, asmc::UzTip::REG_32, rega, 0);
+	m_ramLocation++;
+	//------------//
+
+	m_output.push_back(memlay);
 }
 
 //------------------------------------//

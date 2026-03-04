@@ -43,6 +43,12 @@ namespace asmc
 		SUB,
 		MUL,
 		DIV,
+
+		FADD,
+		FSUB,
+		FMUL,
+		FDIV,
+
 		SHL,
 		SHR,
 
@@ -52,6 +58,10 @@ namespace asmc
 		XOR,
 
 		CMP,
+		FCMP,
+
+		ITOF,
+		FTOI,
 
 
 		//JUMP

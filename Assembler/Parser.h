@@ -163,6 +163,9 @@ namespace asmc
 		//----parse jmp,jlz,jgz,jcf....-------//
 		void parseJMP();
 
+		void parseITOF();
+		void parseFTOI();
+	
 	};
 
 }

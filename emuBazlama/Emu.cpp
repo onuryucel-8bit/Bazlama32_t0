@@ -6,7 +6,7 @@ namespace baz
 {
 	Emu::Emu(std::string path)
 	{
-		m_ram.resize(baz::MB * 1);
+		m_ram.resize(baz::MB * 50);
 		//800*600*2 => grafik karti
 		fr.readFile(path, &m_ram);
 

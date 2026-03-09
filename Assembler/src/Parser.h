@@ -4,9 +4,9 @@
 #include <bitset>
 #include <fstream>
 
-#include "../../libsLocal/rang.hpp"
-#include "../../libsLocal/utils/Radix.h"
-#include "../../libsLocal/magic_enum/magic_enum.hpp"
+#include <libsLocal/rang.hpp>
+#include <libsLocal/utils/Radix.h>
+#include <libsLocal/magic_enum/magic_enum.hpp>
 
 #include "Lexer.h"
 #include "Disassembler.h"

@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 
 #ifdef _DEBUG		
 		std::cout << "Loading default main.asm\n";
-		path = "main.asm";
+		path = cmake_PROJECT_ROOT "bazlama_v0.26.asm";
 #else
 		return 0;
 #endif // DEBUG_FILE

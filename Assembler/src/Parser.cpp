@@ -273,7 +273,7 @@ void Parser::writeOutput()
 	//output EMU file
 	//--------------------------------------------------------------//
 
-	std::ofstream file("emuHex.txt");
+	std::ofstream file(cmake_PROJECT_OUTPUT "emuHex.txt");
 
 	if (file.is_open())
 	{		

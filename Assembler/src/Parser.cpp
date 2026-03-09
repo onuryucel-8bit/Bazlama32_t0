@@ -26,6 +26,7 @@ Parser::Parser(asmc::Lexer& lexer)
 
 	//29 used
 	m_parserFuncs[asmc::TokenType::NOP] = &asmc::Parser::parseNOP;
+	m_parserFuncs[asmc::TokenType::HLT] = &asmc::Parser::parseHLT;
 	m_parserFuncs[asmc::TokenType::INCLUDE] = &asmc::Parser::parseINCLUDE;
 	m_parserFuncs[asmc::TokenType::ORIGIN] = &asmc::Parser::parseORIGIN;
 	m_parserFuncs[asmc::TokenType::DB] = &asmc::Parser::parseDB;
@@ -77,6 +78,7 @@ Parser::Parser(asmc::Lexer& lexer)
 	//-------------------------------------------------//
 	
 	m_opcodeHexTable[asmc::TokenType::NOP] = 0x00;
+	m_opcodeHexTable[asmc::TokenType::HLT] = 0xff;
 
 	//REG-RAM
 	m_opcodeHexTable[asmc::TokenType::LOAD] = 0x01;
@@ -412,6 +414,10 @@ void Parser::program()
 
 	switch (m_currentToken.m_type)
 	{
+	case asmc::TokenType::HLT:
+		parseHLT();
+		break;
+
 	case asmc::TokenType::NOP:
 		parseNOP();
 		break;
@@ -890,8 +896,8 @@ void Parser::parseNOP()
 {	
 	asmc::MemoryLayout memlay;
 
-	memlay.m_opcode = 0x0;
-	memlay.m_packetSize = 1;
+	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::NOP];
+	memlay.m_regFlag = asmc::RegisterFlag::NoReg;
 	memlay.m_ramIndex = m_ramLocation;
 
 	m_ramLocation += 1;
@@ -1078,7 +1084,15 @@ void Parser::parseLOAD()
 	switch (m_currentToken.m_type)
 	{
 		//load rx,sayi
-		case asmc::TokenType::HEXNUMBER:			
+		case asmc::TokenType::HEXNUMBER:
+		case asmc::TokenType::FLOAT:
+
+			if (m_currentToken.m_type == asmc::TokenType::FLOAT)
+			{
+				uint32_t fval = rdx::decToIEEE754_32(m_currentToken.m_text);
+				m_currentToken.m_text = rdx::hexIEEE754_32ToStr(fval);
+				regType = asmc::UzTip::REG_32;
+			}
 
 			//----------//
 			rega = registerPart;
@@ -1917,6 +1931,18 @@ void Parser::parseFTOI()
 	m_ramLocation++;
 	//------------//
 
+	m_output.push_back(memlay);
+}
+
+void Parser::parseHLT()
+{	
+	asmc::MemoryLayout memlay;
+
+	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::HLT];
+	memlay.m_regFlag = asmc::RegisterFlag::NoReg;
+	memlay.m_ramIndex = m_ramLocation;
+
+	m_ramLocation++;
 	m_output.push_back(memlay);
 }
 

@@ -80,22 +80,28 @@ Token Lexer::getToken()
 		if (isNumberHex())
 		{			
 			token = lexHexNumberPart();
-		}
-		//DECIMAL
+		}		
+		//DECIMAL / FLOAT
 		else
 		{
 			size_t length = 1;
 			size_t startpos = m_position;
 
-			while (std::isxdigit(peek()))
-			{
+			asmc::TokenType type = asmc::TokenType::DECIMAL;
+
+			while (std::isxdigit(peek()) || peek() == '.')
+			{				
 				nextChar();
+				if (m_currentChar == '.')
+				{
+					type = asmc::TokenType::FLOAT;
+				}
 				length++;
 			}
 
 			std::string tokenStr = m_program.substr(startpos, length);
 
-			token = { tokenStr, asmc::TokenType::DECIMAL, asmc::UzTip::REG_8, m_lineNumber };
+			token = { tokenStr, type, asmc::UzTip::REG_8, m_lineNumber };
 		}
 	}
 	else

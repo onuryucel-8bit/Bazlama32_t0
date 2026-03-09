@@ -4,22 +4,22 @@
 
 #include <bitset>
 
-uint32_t decToIEEE754_32(float decf)
-{
-	uint32_t result;
-	std::memcpy(&result, &decf, sizeof(result));
-	return result;
-}
-
-uint32_t decToIEEE754_32(std::string decf)
-{
-	uint32_t result;
-
-	float value = std::stof(decf);
-
-	std::memcpy(&result, &value, sizeof(result));
-	return result;
-}
+//uint32_t decToIEEE754_32(float decf)
+//{
+//	uint32_t result;
+//	std::memcpy(&result, &decf, sizeof(result));
+//	return result;
+//}
+//
+//uint32_t decToIEEE754_32(std::string decf)
+//{
+//	uint32_t result;
+//
+//	float value = std::stof(decf);
+//
+//	std::memcpy(&result, &value, sizeof(result));
+//	return result;
+//}
 
 //uint32_t decToIEEE754_32(std::string dec)
 //{

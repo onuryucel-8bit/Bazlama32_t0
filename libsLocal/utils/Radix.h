@@ -46,7 +46,32 @@ namespace rdx {
     //----------------------------------------------------------------//
     //----------------------------------------------------------------//
 
+    inline std::string hexIEEE754_32ToStr(uint32_t value)
+    {
+        std::stringstream ss;
+        ss << std::hex << std::uppercase << value;
+
+        return ss.str();
+    }
     
+	inline uint32_t decToIEEE754_32(float decf)
+	{
+		uint32_t result;
+		std::memcpy(&result, &decf, sizeof(result));
+		return result;
+	}
+
+	inline uint32_t decToIEEE754_32(std::string decf)
+	{
+		uint32_t result;
+
+		float value = std::stof(decf);
+
+		std::memcpy(&result, &value, sizeof(result));
+		return result;
+	}
+	
+	
 
     inline std::string toBinaryString(size_t dec)
     {

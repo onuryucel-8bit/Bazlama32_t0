@@ -1,22 +1,89 @@
+;
+;			.B
+;		   /|
+;		  / |
+;		 /  |
+;		/   | dy
+;	   /    |
+;	  /     |
+;	 /      |
+;  A.-------.
+;	    dx
+;
+;	A(x0,y0)
+;	B(x1,y1)
+;
+
+;------------------------;
+
+
+
+FUNC drawLineDDA:
+	
+	;r0,r1,r2,r3
+	;x0,y0,x1,y1
+	
+	;r4
+	;renk
+	
+	STR @renk, r4
+	
+	PUSH r0
+	PUSH r1
+
+	SUB r0, r2	;deltax
+	SUB r1, r3	;deltay
+	
+	STR @deltax, r0
+	STR @deltay, r1
+	
+	;r0 => abs => r1
+	CALL abs
+	MOV r2,r1
+	LOAD r0, @deltax
+	CALL abs
+	
+	;r2 abs(deltay)
+	;r1 abs(deltax)
+	
+	CMP r1,r2
+	
+	JL L0
+	JMP L1
+	L0:
+		MOV r5,r2
+		JMP L2
+	L1:
+		MOV r5,r1
+	L2:
+	
+	ITOF r5
+	LOAD r4, @deltax
+	ITOF r4
+	FDIV r4, r5 ;incX
+	
+	LOAD r3, @deltay
+	ITOF r3
+	FDIV r3, r5 ;incY
+	
+	;sideLength => stack
+	PUSH r5
+	
+	;r4 incx
+	;r3 incY
+		
+	drawLoop:
+		;r0 x(float)
+		;r1 y(float)
+		;r2 argb_4444
+		
+		
+		CALL DrawPixel
+	
+RET
+
 /*
-void Graphics::ddaLineAlgo(int x0, int y0, int x1, int y1, Color_t color)
-{
-	int deltaX = x1 - x0;
-	int deltaY = y1 - y0;
-
-	/*		
-		if |deltaX| >= |deltaY|
-			sideLength = |deltaX|
-
-		else
-			sideLength = |deltaY|		
-	*/
-	int sideLength = abs(deltaX) >= abs(deltaY) ? abs(deltaX) : abs(deltaY);
-
-	float incX = deltaX / (float)sideLength;
-	float incY = deltaY / (float)sideLength;
-
-	float currentX = x0;
+float currentX = x0;
 	float currentY = y0;
 
 	for (size_t i = 0; i <= sideLength; i++)
@@ -25,43 +92,33 @@ void Graphics::ddaLineAlgo(int x0, int y0, int x1, int y1, Color_t color)
 		currentX += incX;
 		currentY += incY;
 	}
-}
-*/
 
-;x0
-load $ro0, 0x0
-;x1
-load $ro1, 0x0
-;deltaX
-sub $ro0, $ro1
-
-;y0
-load $ro1, 0x0
-;y1
-load $ro2, 0x0
-;deltaY
-sub $ro1, $ro2
-
-;call abs
-
-;float incX = deltaX / (float)sideLength;
-;float incY = deltaY / (float)sideLength;
-fdiv $ro0, sideLength
-fdiv $ro1, sideLength
-
-;i = 0
-load $ro2, 0x0
-loop_dda:
-
-	call drawPixel
-	add $ro3, $ro0
-	add $ro4, $ro1
+	*/
 	
 	
-	;for (size_t i = 0; i <= sideLength; i++)
-	;i++
-	add $ro2, 0x1
-	;i <= sideLength
-	cmp $ro2, sideLength
-	jl loop_dda
+FUNC abs:
+	;int mask = x >> 31;
+	;return (x ^ mask) - mask
 	
+	;r0 = x
+	;r1 = mask
+	MOV r1, r0	;r1 = x
+	SHR r0, 31	;mask = x >> 31
+	XOR r1, r0	;x ^ mask
+	SUB r1, r0  ;(x ^ mask) - mask
+	
+RET
+
+FUNC DrawPixel:
+	;r0 x(float)
+	;r1 y(float)
+	;r2 argb_4444
+	
+	;round() ~~
+	FTOI r0
+	FTOI r1
+	
+	MUL r0, 800
+	ADD r0, r1
+	STR @grafikKarti+r0, r2
+RET

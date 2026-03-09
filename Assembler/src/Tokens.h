@@ -62,6 +62,7 @@ namespace asmc
 
 		ITOF,
 		FTOI,
+		HLT,
 
 
 		//JUMP
@@ -95,6 +96,7 @@ namespace asmc
 		REGISTER,
 		HEXNUMBER,
 		DECIMAL,
+		FLOAT,
 		ADDRESS,
 		REGADR,
 		ADR_P_REG,		

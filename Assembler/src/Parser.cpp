@@ -251,8 +251,11 @@ void Parser::run()
 		}
 		writeOutput();
 	}	
-
-	m_disassembler.run(m_output);
+	
+	if (m_lexer.getDebugFlag())
+	{
+		m_disassembler.run(m_output);
+	}
 
 	std::cerr <<"Total: " <<timer.getElapsedTime_milliseconds() << "ms passed..." << "\n";
 }

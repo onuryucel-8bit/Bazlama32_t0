@@ -4,9 +4,9 @@
 #include <bitset>
 #include <fstream>
 
-#include <libsLocal/rang.hpp>
-#include <libsLocal/utils/Radix.h>
-#include <libsLocal/magic_enum/magic_enum.hpp>
+#include <rang.hpp>
+#include <utils/Radix.h>
+#include <magic_enum/magic_enum.hpp>
 
 #include "Lexer.h"
 #include "Disassembler.h"
@@ -82,7 +82,7 @@ namespace asmc
 		int m_lineNumber;
 
 		asmc::Lexer& m_lexer;
-		asmc::Disassembler m_disassembler;
+		dasm::Disassembler m_disassembler;
 
 		asmc::Token m_currentToken;
 		asmc::Token m_peekToken;

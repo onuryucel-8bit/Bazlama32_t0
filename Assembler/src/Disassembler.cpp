@@ -1,14 +1,11 @@
 #include "pch.h"
 #include "Disassembler.h"
 
-namespace asmc
+namespace dasm
 {
 	Disassembler::Disassembler()
 	{
-		m_opcodeTable[0x01] = { .m_opcode = "load" };
-		m_opcodeTable[0x11] = { .m_opcode = "load" };
-		m_opcodeTable[0x21] = { .m_opcode = "load" };
-		m_opcodeTable[0x31] = { .m_opcode = "load" };
+
 	}
 
 	Disassembler::~Disassembler()
@@ -17,37 +14,49 @@ namespace asmc
 
 	void Disassembler::run(std::vector<asmc::MemoryLayout>& memlay)
 	{
-		for (const auto& item : memlay)
+		std::ofstream file(cmake_PROJECT_OUTPUT "disassembler.txt");
+
+		if (!file.is_open())
 		{
-			char uzreg = 'x';
-			switch ((item.m_regPart & 0b1100'0000) >> 6)
-			{
-			case asmc::UzTip::REG_8:
-				uzreg = 's';
-				break;
-
-			case asmc::UzTip::REG_16:
-				uzreg = 'a';
-				break;
-
-			case asmc::UzTip::REG_32:
-				uzreg = 'o';
-				break;
-			}
-
-			std::cout
-				<< m_opcodeTable[item.m_opcode].m_opcode
-				<< " r" << uzreg << ((item.m_regPart & 0b0011'1000) >> 3);
-
-			//TODO !!
-			std::cout << ", 0x";
-			for (size_t i = 0; i < item.m_packetSize; i++)
-			{
-				std::cout << std::hex << (int)item.m_packet[i];
-			}
-			std::cout << "\n";
-			
-				
+			return;
 		}
+
+		file << std::hex;
+
+		for (auto const& item : memlay)
+		{
+			auto itemEnum = magic_enum::enum_cast<dasm::Komut>(item.m_opcode);
+			
+
+			if (itemEnum.has_value())
+			{
+				size_t ramIndex = item.m_ramIndex;
+
+				file << ramIndex << "|" << magic_enum::enum_name(itemEnum.value()) << "\n";
+				ramIndex++;
+				
+				if (item.m_regFlag == asmc::RegisterFlag::Reg)
+				{
+					file << ramIndex << "|[" << (int)item.m_regPart << "]\n";
+					ramIndex++;
+				}
+
+				for (size_t i = 0; i < item.m_packetSize; i++)
+				{
+					file << ramIndex << "|" << (int)item.m_packet[i] << "\n";
+					ramIndex++;
+				}
+
+				for (size_t i = 0; i < item.m_resPacketSize; i++)
+				{
+					file << ramIndex << "|" << (int)item.m_reservedPacket[i] << "\n";
+					ramIndex++;
+				}
+			}
+
+			file << "====================\n";
+		}
+
+		file.close();
 	}
 }

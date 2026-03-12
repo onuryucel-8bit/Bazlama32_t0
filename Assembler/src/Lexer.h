@@ -3,8 +3,8 @@
 //TODO pch ekle
 
 
-#include <libsLocal/magic_enum/magic_enum.hpp>
-#include <libsLocal/rang.hpp>
+#include <magic_enum/magic_enum.hpp>
+#include <rang.hpp>
 
 #include "Tokens.h"
 

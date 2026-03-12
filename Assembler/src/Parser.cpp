@@ -252,10 +252,9 @@ void Parser::run()
 		writeOutput();
 	}	
 	
-	if (m_lexer.getDebugFlag())
-	{
-		m_disassembler.run(m_output);
-	}
+	//TODO disassembler flag
+	m_disassembler.run(m_output);
+	
 
 	std::cerr <<"Total: " <<timer.getElapsedTime_milliseconds() << "ms passed..." << "\n";
 }
@@ -1658,8 +1657,8 @@ void Parser::parseCALL()
 			entry.m_ramIndex = m_ramLocation;
 			m_ramLocation++;
 
-		//	entry.m_secondPart = -1;
-		//	entry.m_packetSize = 2;
+			//entry.m_secondPart = -1;
+			//entry.m_packetSize = 2;
 			entry.m_fileName = m_lexer.getCurrentFileName();
 			entry.m_lineNumber = lineNumber;
 			entry.m_status = asmc::LabelStatus::No_Ret;

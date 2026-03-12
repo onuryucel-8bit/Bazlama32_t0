@@ -109,6 +109,8 @@ FUNC drawLineDDA
 	;STR @.., 0x0
 	STR @0001'0002, 0x0000'0000
 
+	;(int)SideLength
+	FTOI $rs5
 	drawLoop:
 		
 		
@@ -127,6 +129,8 @@ FUNC drawLineDDA
 		LOAD $rs0, @0001'0002
 		; i, sideLength
 		CMP $rs0, $rs5
+		;i++
+		ADD $rs0, 0x01
 		POP $rs0
 		JL drawLoop
 	

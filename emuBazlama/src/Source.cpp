@@ -64,7 +64,7 @@
 
 #include "SDL3/SDL.h"
 
-baz::Emu emu(cmake_PROJECT_ROOT "emu.txt");
+baz::Emu emu(cmake_PROJECT_TESTS "emu.txt");
 
 uint16_t getBytes_t0(uint8_t uz, uint32_t adr)
 {
@@ -82,7 +82,7 @@ uint16_t getBytes_t0(uint8_t uz, uint32_t adr)
 }
 
 int main()
-{	
+{
 	
 	emu.run();
 

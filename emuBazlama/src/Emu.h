@@ -17,6 +17,8 @@
 
 #include "SDL3/SDL.h"
 #include "magic_enum/magic_enum.hpp"
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/basic_file_sink.h"
 
 #include "FileReader.h"
 
@@ -93,7 +95,8 @@ namespace baz
 		std::vector<uint8_t> m_ram;
 		uint32_t getBytes(uint8_t uz, uint32_t adr);
 	private:
-				
+		
+		std::shared_ptr<spdlog::logger> m_logger;
 		baz::FileReader fr;
 								
 		uint32_t pc = 0;

@@ -376,9 +376,9 @@ void Parser::checkTables()
 								memlay.m_regFlag = asmc::RegisterFlag::NoReg;
 							
 								uint32_t funcAdr = m_symbolTable[symKey].m_ramIndex;
-								for (size_t i = 0; i < 4; i++)
+								for (int i = 3; i >= 0; i--)
 								{
-									memlay.m_packet[i] = funcAdr & (0xff << (8 * i));
+									memlay.m_packet[i] = funcAdr & (0xff << (8 * (i - 3)));
 								}
 
 								m_output.push_back(memlay);
@@ -1650,9 +1650,9 @@ void Parser::parseCALL()
 			m_ramLocation += asmc_WORD;
 
 			uint32_t funcAdr = m_symbolTable[m_currentToken].m_ramIndex;
-			for (size_t i = 0; i < 4; i++)
+			for (int i = 3; i >= 0; i--)
 			{
-				memlay.m_packet[i] = funcAdr & (0xff << (8 * i));
+				memlay.m_packet[i] = funcAdr & (0xff << (8 * (i - 3)));
 			}
 
 			m_output.push_back(memlay);
@@ -1872,10 +1872,10 @@ void Parser::parseJMP()
 		m_ramLocation += asmc_WORD;
 
 		uint32_t funcAdr = m_symbolTable[m_currentToken].m_ramIndex;
-		for (size_t i = 0; i < 4; i++)
+		for (int i = 3; i >= 0; i--)
 		{
-			memlay.m_packet[i] = funcAdr & (0xff00'0000 >> (8 * i));
-		}		
+			memlay.m_packet[i] = funcAdr & (0xff << (8 * (i - 3)));
+		}
 
 		m_output.push_back(memlay);
 	}

@@ -11,6 +11,15 @@ namespace baz
 		fr.readFile(path, &m_ram);
 
 		m_komut = 0;
+
+		try
+		{
+			m_logger = spdlog::basic_logger_mt("basic_logger", cmake_PROJECT_LOGS "basic-log.txt");
+		}
+		catch (const spdlog::spdlog_ex& ex)
+		{
+			std::cout << "Log init failed: " << ex.what() << std::endl;
+		}
 	}
 
 	Emu::~Emu()
@@ -30,7 +39,8 @@ namespace baz
 			{				
 				std::cout << std::hex << pc << "|" << magic_enum::enum_name(enmKmt.value()) << "\n";
 			}
-
+			
+			m_logger.get()->info("wdwd");
 			
 #endif // PRODUCTION_BUILD
 
@@ -395,8 +405,18 @@ namespace baz
 	void Emu::op_RET()
 	{
 		m_registerFile[baz::RegName::Sp]--;
-		
-		pc = m_ram[m_registerFile[baz::RegName::Sp]];
+#ifdef PRODUCTION_BUILD
+		std::cout << "DEBUG :: RET adr: " << std::hex << m_registerFile[baz::RegName::Sp] <<"\n";
+#endif // PRODUCTION_BUILD
+
+		if (m_registerFile[baz::RegName::Sp] >= m_ram.size())
+		{
+			std::cout << "ERROR!!\n";
+		}
+		else
+		{
+			pc = m_ram[m_registerFile[baz::RegName::Sp]];
+		}		
 	}
 
 	void Emu::op_IRET()

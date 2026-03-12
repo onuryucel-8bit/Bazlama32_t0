@@ -25,10 +25,10 @@ namespace baz
 			m_komut = m_ram[pc];
 
 #ifdef PRODUCTION_BUILD			
-			auto color = magic_enum::enum_cast<baz::Komut>(m_komut);
-			if (color.has_value()) 
+			auto enmKmt = magic_enum::enum_cast<baz::Komut>(m_komut);
+			if (enmKmt.has_value())
 			{				
-				std::cout << std::hex << pc << "|" << magic_enum::enum_name(color.value()) << "\n";
+				std::cout << std::hex << pc << "|" << magic_enum::enum_name(enmKmt.value()) << "\n";
 			}
 
 			

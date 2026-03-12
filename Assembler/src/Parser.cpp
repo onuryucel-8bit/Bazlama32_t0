@@ -77,11 +77,14 @@ Parser::Parser(asmc::Lexer& lexer)
 	//-------------------------------------------------//
 	//-------------------------------------------------//
 	
+	//TODO sayi => enum
+	//m_opcode....[] = 0xff => dasm::Komut::HLT 
+
 	m_opcodeHexTable[asmc::TokenType::NOP] = 0x00;
-	m_opcodeHexTable[asmc::TokenType::HLT] = 0xff;
+	m_opcodeHexTable[asmc::TokenType::HLT] = dasm::Komut::HLT;
 
 	//REG-RAM
-	m_opcodeHexTable[asmc::TokenType::LOAD] = 0x01;
+	m_opcodeHexTable[asmc::TokenType::LOAD] = dasm::Komut::LOAD_rx_sayi;
 	m_opcodeHexTable[asmc::TokenType::STR] =  0x10;	
 	m_opcodeHexTable[asmc::TokenType::MOV] =  0x41;
 

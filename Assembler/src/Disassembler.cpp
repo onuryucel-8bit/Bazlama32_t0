@@ -32,6 +32,7 @@ namespace dasm
 			{
 				size_t ramIndex = item.m_ramIndex;
 
+				std::cout << ramIndex << "|" << magic_enum::enum_name(itemEnum.value()) << "\n";
 				file << ramIndex << "|" << magic_enum::enum_name(itemEnum.value()) << "\n";
 				ramIndex++;
 				
@@ -52,6 +53,15 @@ namespace dasm
 					file << ramIndex << "|" << (int)item.m_reservedPacket[i] << "\n";
 					ramIndex++;
 				}
+			}
+			else
+			{
+				std::cout 
+					<< "ERROR::Disassembler invalid opcode [" 
+					<< std::hex 					
+					<< (int)item.m_opcode 
+					<< "]\n";
+				
 			}
 
 			file << "====================\n";

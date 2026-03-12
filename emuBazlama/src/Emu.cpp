@@ -21,9 +21,20 @@ namespace baz
 	{		
 		//TODO hlt
 		while (m_ram[pc] != baz::Komut::HLT)
-		{
-			m_komut = m_ram[pc];			
+		{			
+			m_komut = m_ram[pc];
+
+#ifdef PRODUCTION_BUILD			
+			auto color = magic_enum::enum_cast<baz::Komut>(m_komut);
+			if (color.has_value()) 
+			{				
+				std::cout << std::hex << pc << "|" << magic_enum::enum_name(color.value()) << "\n";
+			}
+
 			
+#endif // PRODUCTION_BUILD
+
+
 			if ((m_komut & 0b0000'1111) == 0x02 ||
 				(m_komut & 0b0000'1111) == 0x06)
 			{
@@ -52,7 +63,7 @@ namespace baz
 					break;
 
 				case baz::Komut::CALL_adr:
-				case baz::Komut::CALL_regadr:
+				case baz::Komut::CALL_regadr:					
 					op_CALL();
 					break;
 
@@ -89,6 +100,24 @@ namespace baz
 					op_JNE();
 					break;
 
+				case baz::Komut::JL:
+					op_JL();
+					break;
+
+				case baz::Komut::FTOI_rx:
+					op_FTOI();
+					break;
+
+				case baz::Komut::ITOF_rx:
+					op_ITOF();
+					break;
+
+				case baz::Komut::FADD_rx_adr:
+				case baz::Komut::FADD_rx_regadr:
+				case baz::Komut::FADD_rx_ry:
+				case baz::Komut::FADD_rx_sayi:
+					op_floatArithmetic();
+					break;
 				
 
 				}
@@ -585,6 +614,33 @@ namespace baz
 			}
 			break;
 		}
+	}
+
+	void Emu::op_FTOI()
+	{
+		baz::RegisterPart regPart = getRegisterPart();
+
+		m_registerFile[regPart.m_rega] = rdx::IEEE754_toInt(m_registerFile[regPart.m_rega]);
+	}
+
+	void Emu::op_ITOF()
+	{		
+		baz::RegisterPart regPart = getRegisterPart();
+
+		m_registerFile[regPart.m_rega] = rdx::decToIEEE754_32(m_registerFile[regPart.m_rega]);
+	}
+
+	void Emu::op_floatArithmetic()
+	{
+		//TODO digerlerini ekle
+		baz::RegisterPart regPart = getRegisterPart();
+
+		float rx = std::bit_cast<float>(m_registerFile[regPart.m_rega]);
+		float ry = std::bit_cast<float>(m_registerFile[regPart.m_regb]);
+
+		rx += ry;
+
+		m_registerFile[regPart.m_rega] = rdx::decToIEEE754_32(rx);
 	}
 
 	//============================================================================================================//

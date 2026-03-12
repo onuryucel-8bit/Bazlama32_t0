@@ -349,9 +349,9 @@ void Parser::checkTables()
 				{
 					//check jump table if label used
 					for (const auto& [token, entry] : m_unresolvedTable)
-					{
+					{						
 						if (token == symKey)
-						{
+						{							
 							m_symbolTable[symKey].m_status = asmc::LabelStatus::Used;
 
 							for (size_t i = 0; i < entry.size(); i++)
@@ -1656,6 +1656,7 @@ void Parser::parseCALL()
 
 			entry.m_opcode = memlay.m_opcode;
 			entry.m_ramIndex = m_ramLocation;
+			m_ramLocation++;
 
 		//	entry.m_secondPart = -1;
 		//	entry.m_packetSize = 2;
@@ -1734,9 +1735,9 @@ void Parser::parseFUNC()
 
 				m_ramLocation++;
 				uint32_t funcAdr = m_ramLocation;
-				for (size_t i = 0; i < 4; i++)
+				for (int i = 3; i >= 0; i--)
 				{
-					memlay.m_packet[i] = funcAdr & (0xff << (8 * i));
+					memlay.m_packet[i] = funcAdr & (0xff << (8 * (i - 3)));
 				}
 
 				m_output.push_back(memlay);
@@ -1790,6 +1791,8 @@ void Parser::parseRET()
 #pragma endregion
 
 //----------------JUMP----------------//
+
+#pragma region JUMP
 
 void Parser::parseLabel()
 {
@@ -1883,6 +1886,8 @@ void Parser::parseJMP()
 		m_unresolvedTable[m_currentToken].push_back(entry);
 	}	
 }
+
+#pragma endregion
 
 void Parser::parseITOF()
 {

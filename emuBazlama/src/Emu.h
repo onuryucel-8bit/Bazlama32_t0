@@ -13,7 +13,10 @@
 #define baz_false 0
 #define baz_true 1
 
-#include <utils/Radix.h>
+#include <bit>
+
+#include "SDL3/SDL.h"
+#include "magic_enum/magic_enum.hpp"
 
 #include "FileReader.h"
 
@@ -96,7 +99,7 @@ namespace baz
 		uint32_t pc = 0;
 		uint32_t m_registerFile[8] = {};
 		uint8_t m_komut;
-		
+				
 
 		//pc++ returns reguz,rega,regb
 		baz::RegisterPart getRegisterPart();
@@ -140,6 +143,11 @@ namespace baz
 		void op_XOR();
 		void op_Shift();
 		void op_CMP();
+
+		void op_FTOI();
+		void op_ITOF();
+
+		void op_floatArithmetic();
 
 	};	
 }

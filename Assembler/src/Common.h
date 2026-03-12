@@ -85,19 +85,15 @@ namespace asmc
 	struct MemoryLayout
 	{
 		uint8_t m_opcode = 0;
-
-		//TODO remove
-		//uint8_t m_secondPart = 0;
-
 		uint8_t m_regPart = 0;
 
-		//TODO !!MEMORY LEAK!! add delete
+		//MEMORY LEAK freed by OS at exit
 		uint8_t* m_packet = nullptr;
 		uint8_t m_packetSize = 0;
 		//starting of the ram location
 		int m_ramIndex = -1;
 
-		//TODO !!MEMORY LEAK!! add delete
+		//MEMORY LEAK freed by OS at exit
 		uint8_t* m_reservedPacket = nullptr;
 		uint8_t  m_resPacketSize = 0;
 

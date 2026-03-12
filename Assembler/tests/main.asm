@@ -24,6 +24,10 @@ LOAD $ra2, 0x01F4
 LOAD $ra3, 0x0064
 LOAD $ra4, 0xf00f
 
+
+CALL drawLineDDA
+HLT
+
 FUNC drawLineDDA
 	
 	;r0,r1,r2,r3
@@ -98,6 +102,9 @@ FUNC drawLineDDA
 	;r1 y0 currentY
 	;r0 x0 currentX
 	
+	ITOF $rs0
+	ITOF $rs1
+	
 	;i
 	;STR @.., 0x0
 	STR @0001'0002, 0x0000'0000
@@ -110,9 +117,9 @@ FUNC drawLineDDA
 		CALL DrawPixel
 		
 		;currentX += incX
-		FADD $rs0, r4
+		FADD $rs0, $rs4
 		;currentY += incY
-		FADD $rs1, r3
+		FADD $rs1, $rs3
 				
 		PUSH $rs0
 		;r0 = i

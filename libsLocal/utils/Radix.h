@@ -46,6 +46,29 @@ namespace rdx {
     //----------------------------------------------------------------//
     //----------------------------------------------------------------//
 
+    /*
+    *
+    *  #include <bit>
+    *  uint32_t reg = 5;
+    *  float a = std::bit_cast<float>(reg);
+    * 
+    */ 
+
+
+    inline float IEEE754_toFloat(uint32_t val)
+    {
+        float result;
+        std::memcpy(&result, &val, sizeof(result));
+        return result;
+    }
+
+    inline uint32_t IEEE754_toInt(uint32_t value)
+    {
+        float retval = rdx::IEEE754_toFloat(value);
+
+        return (uint32_t)retval;
+    }
+
     inline std::string hexIEEE754_32ToStr(uint32_t value)
     {
         std::stringstream ss;
@@ -70,8 +93,6 @@ namespace rdx {
 		std::memcpy(&result, &value, sizeof(result));
 		return result;
 	}
-	
-	
 
     inline std::string toBinaryString(size_t dec)
     {

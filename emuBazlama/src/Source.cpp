@@ -62,7 +62,7 @@
 //	return 0;
 //}
 
-#include <SDL3/SDL.h>
+#include "SDL3/SDL.h"
 
 baz::Emu emu(cmake_PROJECT_ROOT "emu.txt");
 
@@ -86,56 +86,56 @@ int main()
 	
 	emu.run();
 
-	int windowWidth = 800;
-	int windowHeight = 600;
+	//int windowWidth = 800;
+	//int windowHeight = 600;
 
-	SDL_Window* window = SDL_CreateWindow("bazlama", windowWidth, windowHeight, SDL_WINDOW_FULLSCREEN);
+	//SDL_Window* window = SDL_CreateWindow("bazlama", windowWidth, windowHeight, SDL_WINDOW_FULLSCREEN);
 
-	SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
+	//SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
 
-	using Color_t = uint16_t;
+	//using Color_t = uint16_t;
 
-	Color_t* colorBuffer = new Color_t[windowWidth * windowHeight];
+	//Color_t* colorBuffer = new Color_t[windowWidth * windowHeight];
 
-	for (size_t i = 0; i < windowWidth*windowHeight; i++)
-	{
-		colorBuffer[i] = getBytes_t0(baz::UzTip::REG_16, 0x0000'0020 + (i * 2) );
-	}	
+	//for (size_t i = 0; i < windowWidth*windowHeight; i++)
+	//{
+	//	colorBuffer[i] = getBytes_t0(baz::UzTip::REG_16, 0x0311'5A00 + (i * 2) );
+	//}	
 
-	SDL_Texture* canvas = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB4444, SDL_TEXTUREACCESS_STREAMING, windowWidth, windowHeight);
-	
-	bool f_running = true;
-	while (f_running)
-	{
-		SDL_Event event;
-		while (SDL_PollEvent(&event))
-		{
-			if (event.type == SDL_EVENT_QUIT)
-			{
-				f_running = false;
-			}
+	//SDL_Texture* canvas = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB4444, SDL_TEXTUREACCESS_STREAMING, windowWidth, windowHeight);
+	//
+	//bool f_running = true;
+	//while (f_running)
+	//{
+	//	SDL_Event event;
+	//	while (SDL_PollEvent(&event))
+	//	{
+	//		if (event.type == SDL_EVENT_QUIT)
+	//		{
+	//			f_running = false;
+	//		}
 
-			switch (event.key.key)
-			{
-			case SDLK_ESCAPE:
-				f_running = false;
-				break;
-			}
-		}
-		SDL_RenderClear(renderer);
+	//		switch (event.key.key)
+	//		{
+	//		case SDLK_ESCAPE:
+	//			f_running = false;
+	//			break;
+	//		}
+	//	}
+	//	SDL_RenderClear(renderer);
 
-		//load colorbuffer
-		SDL_UpdateTexture(canvas, NULL, colorBuffer, (int)(windowWidth * sizeof(Color_t)));
+	//	//load colorbuffer
+	//	SDL_UpdateTexture(canvas, NULL, colorBuffer, (int)(windowWidth * sizeof(Color_t)));
 
-		//make it pixaled
-		SDL_SetTextureScaleMode(canvas, SDL_SCALEMODE_NEAREST);
+	//	//make it pixaled
+	//	SDL_SetTextureScaleMode(canvas, SDL_SCALEMODE_NEAREST);
 
-		//render canvas
-		SDL_RenderTexture(renderer, canvas, NULL, NULL);
+	//	//render canvas
+	//	SDL_RenderTexture(renderer, canvas, NULL, NULL);
 
-		//swap buffers
-		SDL_RenderPresent(renderer);
-	}
+	//	//swap buffers
+	//	SDL_RenderPresent(renderer);
+	//}
 
 	/*int a = 5;
 	int b = -5;

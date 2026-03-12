@@ -1,3 +1,6 @@
+### Bellek
+<img width="1332" height="639" alt="2026-03-12 15-37-30" src="https://github.com/user-attachments/assets/b65797cd-b74f-495a-9ca3-07bd271b99a5" />
+
 ### Yazim kurallari
 
     bellekler(0, 1, 2, 3, 4, 5, 6, 7[yigin/sp])

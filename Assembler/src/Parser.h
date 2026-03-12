@@ -65,7 +65,7 @@ namespace asmc
 
 		void writeOutput();
 
-		asmc::MemoryLayout parseOperand(asmc::TokenType type);
+		asmc::MemoryLayout parseOperand(asmc::TokenType type);				
 
 		void convertToBytes(std::string& text, asmc::UzTip regtype, uint8_t* packet);
 

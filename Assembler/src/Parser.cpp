@@ -159,6 +159,14 @@ void Parser::run()
 
 	while (m_currentToken.m_type != asmc::TokenType::ENDOFFILE)
 	{							
+#ifdef PRODUCTION_BUILD
+		if (m_currentToken.m_type == asmc::TokenType::HLT) 
+		{
+			std::cout << "!\n";
+		}
+#endif // PRODUCTION_BUILD
+
+
 		program();		
 
 		if (m_peekToken.m_type == asmc::TokenType::ENDOFFILE)
@@ -1735,7 +1743,7 @@ void Parser::parseFUNC()
 				memlay.m_packetSize = asmc::UzTip::REG_32 + 1;
 				memlay.m_packet = new uint8_t[asmc::UzTip::REG_32 + 1];
 
-				m_ramLocation++;
+				//m_ramLocation++;
 				uint32_t funcAdr = m_ramLocation;
 				for (int i = 3; i >= 0; i--)
 				{
@@ -1905,7 +1913,8 @@ void Parser::parseITOF()
 
 	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::ITOF];
 	memlay.m_ramIndex = m_ramLocation;
-	
+	m_ramLocation++;
+
 	moveCurrentToken();
 
 	//------------//
@@ -1932,6 +1941,7 @@ void Parser::parseFTOI()
 
 	memlay.m_opcode = m_opcodeHexTable[asmc::TokenType::FTOI];
 	memlay.m_ramIndex = m_ramLocation;
+	m_ramLocation++;
 
 	moveCurrentToken();
 

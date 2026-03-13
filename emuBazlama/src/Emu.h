@@ -14,6 +14,7 @@
 #define baz_true 1
 
 #include <bit>
+#include <sstream>
 
 #include "SDL3/SDL.h"
 #include "magic_enum/magic_enum.hpp"
@@ -109,7 +110,7 @@ namespace baz
 
 		void calculate(baz::OperationType type, uint32_t& reg, uint32_t value);
 
-		
+		uint32_t getBytesSafe(uint8_t uz);
 
 		//pc++
 		uint32_t getBytes(uint8_t uz);

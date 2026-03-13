@@ -41,57 +41,57 @@ FUNC drawLineDDA
 	PUSH $rs0
 	PUSH $rs1
 
-	SUB $rs0, $rs2	;deltax
-	SUB $rs1, $rs3	;deltay
-	
-	;STR @deltax, $rs0
-	STR @0001'0000, $rs0
-	;STR @deltay, $rs1
-	STR @0001'0001, $rs1
-	
-	;r0 deltax
-	;r1 deltay
-	
-	;r0 => abs => r1
-	CALL abs
-	;r2 = abs(deltax)
-	MOV $rs2,$rs1
-	;LOAD $rs0, @deltay
-	LOAD $rs0, @0001'0001
-	CALL abs
-	
-	
-	;r2 abs(deltax)
-	;r1 abs(deltay)
-	
-	CMP $rs2,$rs1
-	
-	JL L0
-	JMP L1
-	L0:
-		;SideLenght = deltay
-		MOV $rs5, $rs1
-		JMP L2
-	L1:
-		;SideLenght = deltax
-		MOV $rs5, $rs2
-	L2:
-	
-	;float(SideLenght)
-	ITOF $rs5
-	;LOAD $rs4, @deltax
-	LOAD $rs4, @0001'0000
-	;float(deltax)
-	ITOF $rs4
-	;incx = deltax / (float)sideLength
-	FDIV $rs4, $rs5
-	
-	;LOAD $rs3, @deltay
-	LOAD $rs3, @0001'0001
-	;float(deltay)
-	ITOF $rs3
-	;incy = deltay / (float)sideLength
-	FDIV $rs3, $rs5
+		SUB $rs0, $rs2	;deltax
+		SUB $rs1, $rs3	;deltay
+		
+		;STR @deltax, $rs0
+		STR @0001'0000, $rs0
+		;STR @deltay, $rs1
+		STR @0001'0001, $rs1
+		
+		;r0 deltax
+		;r1 deltay
+		
+		;r0 => abs => r1
+		CALL abs
+		;r2 = abs(deltax)
+		MOV $rs2,$rs1
+		;LOAD $rs0, @deltay
+		LOAD $rs0, @0001'0001
+		CALL abs
+		
+		/*
+		;r2 abs(deltax)
+		;r1 abs(deltay)
+		
+		CMP $rs2,$rs1
+		
+		JL L0
+		JMP L1
+		L0:
+			;SideLenght = deltay
+			MOV $rs5, $rs1
+			JMP L2
+		L1:
+			;SideLenght = deltax
+			MOV $rs5, $rs2
+		L2:
+		
+		;float(SideLenght)
+		ITOF $rs5
+		;LOAD $rs4, @deltax
+		LOAD $rs4, @0001'0000
+		;float(deltax)
+		ITOF $rs4
+		;incx = deltax / (float)sideLength
+		FDIV $rs4, $rs5
+		
+		;LOAD $rs3, @deltay
+		LOAD $rs3, @0001'0001
+		;float(deltay)
+		ITOF $rs3
+		;incy = deltay / (float)sideLength
+		FDIV $rs3, $rs5
 	
 	POP $rs1
 	POP $rs0
@@ -108,15 +108,15 @@ FUNC drawLineDDA
 	;i
 	;STR @.., 0x0
 	STR @0001'0002, 0x0000'0000
-
+	
 	;(int)SideLength
-	FTOI $rs5
+	FTOI $rs5 ;HATA VAR ASSEMBLER GORMUYOR
 	drawLoop:
 		
 		
 		;r0,r1,r2
 		;x0,y0,color
-		CALL DrawPixel
+		;CALL DrawPixel
 		
 		;currentX += incX
 		FADD $rs0, $rs4
@@ -124,16 +124,16 @@ FUNC drawLineDDA
 		FADD $rs1, $rs3
 				
 		PUSH $rs0
-		;r0 = i
-		;LOAD $rs0, @...
-		LOAD $rs0, @0001'0002
-		; i, sideLength
-		CMP $rs0, $rs5
-		;i++
-		ADD $rs0, 0x01
+			;r0 = i
+			;LOAD $rs0, @...
+			LOAD $rs0, @0001'0002
+			; i, sideLength
+			CMP $rs0, $rs5
+			;i++
+			ADD $rs0, 0x01
 		POP $rs0
 		JL drawLoop
-	
+	*/
 RET
 
 /*
@@ -170,19 +170,19 @@ FUNC DrawPixel
 	
 	PUSH $rs0
 	PUSH $rs1
-	;r1 = y0
-	;r0 = x0
-	
-	;round() ~~
-	FTOI $rs0
-	FTOI $rs1
-	
-	
-	;y * width
-	MUL $rs1, 800
-	;y * width + x
-	ADD $rs0, $rs1
-	STR @0031'5A00+r0, $ro2
+		;r1 = y0
+		;r0 = x0
+		
+		;round() ~~
+		FTOI $rs0
+		FTOI $rs1
+		
+		
+		;y * width
+		MUL $rs1, 800
+		;y * width + x
+		ADD $rs0, $rs1
+		STR @0031'5A00+r0, $ro2
 	
 	POP $rs1
 	POP $rs0

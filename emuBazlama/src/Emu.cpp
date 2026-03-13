@@ -20,6 +20,13 @@ namespace baz
 		{
 			std::cout << "Log init failed: " << ex.what() << std::endl;
 		}
+
+		m_registerFile[baz::RegName::Sp] = 0x31'5a01;
+
+#ifdef PRODUCTION_BUILD
+		spdlog::set_level(spdlog::level::debug);
+#endif // PRODUCTION_BUILD
+
 	}
 
 	Emu::~Emu()
@@ -37,11 +44,14 @@ namespace baz
 			auto enmKmt = magic_enum::enum_cast<baz::Komut>(m_komut);
 			if (enmKmt.has_value())
 			{				
-				std::cout << std::hex << pc << "|" << magic_enum::enum_name(enmKmt.value()) << "\n";
-			}
+				//std::cout << std::hex << pc << "|" << magic_enum::enum_name(enmKmt.value()) << "\n";
+			}				
 			
-			m_logger.get()->info("wdwd");
-			
+			/*std::stringstream ss;
+			ss << "DEBUG :: RET adr: " << std::hex << m_registerFile[baz::RegName::Sp];
+			spdlog::info(ss.str());*/
+
+			//m_logger.get()->info(ss.str());
 #endif // PRODUCTION_BUILD
 
 
@@ -132,7 +142,7 @@ namespace baz
 
 				}
 			}			
-			pc++;
+  			pc++;
 		}
 
 		for (size_t i = 0; i < 8; i++)
@@ -201,7 +211,7 @@ namespace baz
 			reg /= value;
 			break;
 		}
-	}
+	}	
 
 	void Emu::op_Arithmetic()
 	{	
@@ -338,6 +348,7 @@ namespace baz
 
 			switch (m_komut)
 			{
+			//TODO hata var burda STR adr, reg turevini STR_adr_regadr saniyor
 			case baz::Komut::STR_adr_regadr:
 			{
 				adr = getBytes(baz::UzTip::REG_32);
@@ -375,16 +386,26 @@ namespace baz
 
 	void Emu::op_CALL()
 	{
+#ifdef PRODUCTION_BUILD
+		std::stringstream ss;
+		
+		ss << "CALL : sp[" << std::hex << m_registerFile[baz::RegName::Sp] 
+			<< "], sp + 1[" << m_registerFile[baz::RegName::Sp] + 1 << "] sp["
+			<< (int)m_ram[m_registerFile[baz::RegName::Sp]] << "]";
+
+		spdlog::debug(ss.str());
+#endif //PRODUCTION_BUILD
+
 		switch (m_komut)
 		{
 			case baz::CALL_adr:
 			{
 				uint32_t adr = getBytes(baz::UzTip::REG_32);
-				m_ram[m_registerFile[baz::RegName::Sp]] = pc;
+				m_ram[m_registerFile[baz::RegName::Sp]] = pc - 1;
 			
 				m_registerFile[baz::RegName::Sp]++;
 
-				pc = adr;
+				pc = adr - 1;
 
 				break;
 			}
@@ -392,11 +413,11 @@ namespace baz
 			{
 				baz::RegisterPart regPart = getRegisterPart();
 
-				m_ram[m_registerFile[baz::RegName::Sp]] = pc;
+				m_ram[m_registerFile[baz::RegName::Sp]] = pc - 1;
 
 				m_registerFile[baz::RegName::Sp]++;
 
-				pc = m_registerFile[regPart.m_rega];
+				pc = m_registerFile[regPart.m_rega] - 1;
 				break;
 			}
 		}
@@ -404,10 +425,17 @@ namespace baz
 
 	void Emu::op_RET()
 	{
-		m_registerFile[baz::RegName::Sp]--;
 #ifdef PRODUCTION_BUILD
-		std::cout << "DEBUG :: RET adr: " << std::hex << m_registerFile[baz::RegName::Sp] <<"\n";
-#endif // PRODUCTION_BUILD
+		std::stringstream ss;
+
+		ss << "RET  : sp[" << std::hex << m_registerFile[baz::RegName::Sp] 
+			<< "], sp + 1[" << m_registerFile[baz::RegName::Sp] - 1 << "] sp-1["
+			<< (int)m_ram[m_registerFile[baz::RegName::Sp]] << "]";
+
+		spdlog::debug(ss.str());
+#endif //PRODUCTION_BUILD
+
+		m_registerFile[baz::RegName::Sp]--;
 
 		if (m_registerFile[baz::RegName::Sp] >= m_ram.size())
 		{
@@ -425,6 +453,15 @@ namespace baz
 
 	void Emu::op_PUSH()
 	{
+
+#ifdef PRODUCTION_BUILD
+		std::stringstream ss;
+		ss << "PUSH : sp[" << std::hex << m_registerFile[baz::RegName::Sp] 
+			<< "], sp + 1[" << m_registerFile[baz::RegName::Sp] + 1 << "] sp + 1["
+			<< (int)m_ram[m_registerFile[baz::RegName::Sp]] << "]";
+		spdlog::debug(ss.str());
+#endif //PRODUCTION_BUILD
+
 		baz::RegisterPart regPart = getRegisterPart();
 
 		m_ram[m_registerFile[baz::RegName::Sp]] = m_registerFile[regPart.m_rega];
@@ -434,6 +471,14 @@ namespace baz
 
 	void Emu::op_POP()
 	{
+#ifdef PRODUCTION_BUILD
+		std::stringstream ss;
+		ss << "POP  : sp[" << std::hex << m_registerFile[baz::RegName::Sp]
+			<< "], sp + 1[" << m_registerFile[baz::RegName::Sp] - 1 << "] sp -1["
+			<< (int)m_ram[m_registerFile[baz::RegName::Sp]] <<"]";
+		spdlog::debug(ss.str());
+#endif //PRODUCTION_BUILD
+
 		baz::RegisterPart regPart = getRegisterPart();
 
 		m_registerFile[baz::RegName::Sp]--;
@@ -690,7 +735,7 @@ namespace baz
 		regPart.m_regb = m_ram[pc] & baz_maskRy;
 
 		return regPart;
-	}
+	}	
 
 	uint32_t Emu::getBytes(uint8_t uz)
 	{

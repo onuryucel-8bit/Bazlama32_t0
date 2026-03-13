@@ -79,6 +79,9 @@
 		popa
 		mwe
 		md
+		
+	EMU:
+		CMP_rx_adr
 
 ### hatalar
 

@@ -21,7 +21,7 @@ namespace baz
 			std::cout << "Log init failed: " << ex.what() << std::endl;
 		}
 
-		m_registerFile[baz::RegName::Sp] = 0x31'5a01;
+		m_registerFile[baz::RegName::Sp] = baz_StackBaseADR;
 
 #ifdef PRODUCTION_BUILD
 		spdlog::set_level(spdlog::level::debug);
@@ -34,13 +34,18 @@ namespace baz
 	}
 
 	void Emu::run()
-	{		
-		//TODO hlt
+	{				
 		while (m_ram[pc] != baz::Komut::HLT)
 		{			
+		
 			m_komut = m_ram[pc];
 
-#ifdef PRODUCTION_BUILD			
+			if (m_komut == baz::Komut::FTOI_rx)
+			{
+				std::cout << "!\n";
+			}
+
+#ifdef _DEBUG			
 			auto enmKmt = magic_enum::enum_cast<baz::Komut>(m_komut);
 			if (enmKmt.has_value())
 			{				
@@ -57,16 +62,38 @@ namespace baz
 			//m_logger.get()->info(ss.str());
 #endif // PRODUCTION_BUILD
 
+			//CMP_rx_ry
+			//if (pc == 0x95)
+			//JL
+			//if (pc == 0xa2)
+			//{
+				//std::cout << "debug\n";
+			//}
 
-			if ((m_komut & 0b0000'1111) == 0x02 ||
-				(m_komut & 0b0000'1111) == 0x06)
+			
+
+		
+			switch (m_komut)
 			{
-				op_Arithmetic();
-			}
-			else
-			{
-				switch (m_komut)
-				{
+				case baz::ADD_rx_sayi:
+				case baz::ADD_rx_regadr:
+				case baz::ADD_rx_adr:
+				case baz::ADD_rx_ry:
+				case baz::SUB_rx_sayi:
+				case baz::SUB_rx_regadr:
+				case baz::SUB_rx_adr:
+				case baz::SUB_rx_ry:
+				case baz::MUL_rx_sayi:
+				case baz::MUL_rx_regadr:
+				case baz::MUL_rx_adr:
+				case baz::MUL_rx_ry:
+				case baz::DIV_rx_sayi:
+				case baz::DIV_rx_regadr:
+				case baz::DIV_rx_adr:
+				case baz::DIV_rx_ry:
+					op_Arithmetic();
+					break;
+
 				case baz::Komut::LOAD_rx_adr:
 				case baz::Komut::LOAD_rx_adr_p_reg:
 				case baz::Komut::LOAD_rx_regadr:
@@ -112,6 +139,7 @@ namespace baz
 				case baz::Komut::CMP_rx_regadr:
 				case baz::Komut::CMP_rx_ry:
 				case baz::Komut::CMP_rx_sayi:
+				case baz::Komut::CMP_rx_adr:
 					op_CMP();
 					break;
 
@@ -140,11 +168,9 @@ namespace baz
 				case baz::Komut::FADD_rx_ry:
 				case baz::Komut::FADD_rx_sayi:
 					op_floatArithmetic();
-					break;
-				
-
-				}
-			}			
+					break;			
+			}
+					
   			pc++;
 		}
 
@@ -214,7 +240,33 @@ namespace baz
 			reg /= value;
 			break;
 		}
-	}	
+	}
+
+	void Emu::printStack()
+	{
+						
+		uint32_t sp = m_registerFile[baz::RegName::Sp];
+
+		
+		std::cout << std::hex;
+		std::cout << "-----------------------------\n";
+		std::cout << "PC: " << pc << "\n";
+		std::cout << "----------- STACK -----------\n";
+				
+		int i = baz_StackBaseADR;
+		int j = 1;
+		while (i > sp)
+		{			
+			std::cout << "sp: " << sp + j << " stack[" << (int)m_ram[sp + j] << "]\n";
+			i--;
+			j++;
+		}
+
+		std::cout << "-----------------------------\n";
+		std::cout << std::dec;
+
+	}
+
 
 	void Emu::op_Arithmetic()
 	{	
@@ -222,6 +274,8 @@ namespace baz
 
 		uint32_t value = 0;
 		baz::OperationType operationType = baz::OperationType::Add;
+
+		
 
 		switch (m_komut)
 		{
@@ -325,7 +379,7 @@ namespace baz
 
 			value = m_registerFile[regPart.m_regb];
 			break;
-		}
+		}		
 
 		calculate(operationType, m_registerFile[regPart.m_rega], value);
 	}
@@ -387,9 +441,15 @@ namespace baz
 		m_registerFile[regPart.m_rega] = m_registerFile[regPart.m_regb];
 	}
 
+
+	//--------------------------------------------------------------------------//
+	//--------------------------------------------------------------------------//
+	//--------------------------------------------------------------------------//
+
+
 	void Emu::op_CALL()
 	{
-#ifdef PRODUCTION_BUILD
+#ifdef _DEBUG
 		std::stringstream ss;
 		
 		ss << "CALL : sp[" << std::hex << m_registerFile[baz::RegName::Sp] 
@@ -404,9 +464,7 @@ namespace baz
 			case baz::CALL_adr:
 			{
 				uint32_t adr = getBytes(baz::UzTip::REG_32);
-				m_ram[m_registerFile[baz::RegName::Sp]] = pc - 1;
-			
-				m_registerFile[baz::RegName::Sp]++;
+				storeBytesToStack(pc, baz::UzTip::REG_32);							
 
 				pc = adr - 1;
 
@@ -415,20 +473,19 @@ namespace baz
 			case baz::CALL_regadr:
 			{
 				baz::RegisterPart regPart = getRegisterPart();
-
-				m_ram[m_registerFile[baz::RegName::Sp]] = pc - 1;
-
-				m_registerFile[baz::RegName::Sp]++;
+				storeBytesToStack(pc, baz::UzTip::REG_32);				
 
 				pc = m_registerFile[regPart.m_rega] - 1;
 				break;
 			}
 		}
+
+		//printStack();
 	}
 
 	void Emu::op_RET()
 	{
-#ifdef PRODUCTION_BUILD
+#ifdef _DEBUG
 		std::stringstream ss;
 
 		ss << "RET  : sp[" << std::hex << m_registerFile[baz::RegName::Sp] 
@@ -436,9 +493,7 @@ namespace baz
 			<< (int)m_ram[m_registerFile[baz::RegName::Sp]] << "]";
 
 		spdlog::debug(ss.str());
-#endif //PRODUCTION_BUILD
-
-		m_registerFile[baz::RegName::Sp]--;
+#endif //PRODUCTION_BUILD		
 
 		if (m_registerFile[baz::RegName::Sp] >= m_ram.size())
 		{
@@ -446,8 +501,10 @@ namespace baz
 		}
 		else
 		{
-			pc = m_ram[m_registerFile[baz::RegName::Sp]];
+			pc = getBytesFromStack(baz::UzTip::REG_32);			
 		}		
+
+		//printStack();
 	}
 
 	void Emu::op_IRET()
@@ -457,7 +514,7 @@ namespace baz
 	void Emu::op_PUSH()
 	{
 
-#ifdef PRODUCTION_BUILD
+#ifdef _DEBUG
 		std::stringstream ss;
 		ss << "PUSH : sp[" << std::hex << m_registerFile[baz::RegName::Sp] 
 			<< "], sp + 1[" << m_registerFile[baz::RegName::Sp] + 1 << "] sp + 1["
@@ -467,14 +524,15 @@ namespace baz
 
 		baz::RegisterPart regPart = getRegisterPart();
 
-		m_ram[m_registerFile[baz::RegName::Sp]] = m_registerFile[regPart.m_rega];
+		//TODO uztip reg16,8
+		storeBytesToStack(m_registerFile[regPart.m_rega], baz::UzTip::REG_32);				
 
-		m_registerFile[baz::RegName::Sp]++;
+		//printStack();
 	}
 
 	void Emu::op_POP()
 	{
-#ifdef PRODUCTION_BUILD
+#ifdef _DEBUG
 		std::stringstream ss;
 		ss << "POP  : sp[" << std::hex << m_registerFile[baz::RegName::Sp]
 			<< "], sp + 1[" << m_registerFile[baz::RegName::Sp] - 1 << "] sp -1["
@@ -483,10 +541,10 @@ namespace baz
 #endif //PRODUCTION_BUILD
 
 		baz::RegisterPart regPart = getRegisterPart();
+				
+		m_registerFile[regPart.m_rega] = getBytesFromStack(baz::UzTip::REG_32);;
 
-		m_registerFile[baz::RegName::Sp]--;
-
-		m_registerFile[regPart.m_rega] = m_ram[m_registerFile[baz::RegName::Sp]];		
+		//printStack();
 	}
 
 	void Emu::op_PUSHA()
@@ -509,6 +567,13 @@ namespace baz
 		}
 	}
 
+
+	//--------------------------------------------------------------------------//
+	//--------------------------------------------------------------------------//
+	//--------------------------------------------------------------------------//
+
+
+
 	void Emu::op_JMP()
 	{
 		uint32_t adr = getBytes(baz::UzTip::REG_32);
@@ -520,7 +585,7 @@ namespace baz
 	{
 		uint32_t adr = getBytes(baz::UzTip::REG_32);
 
-		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_eqeq) == baz_false)
+		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_eqeq) != baz::FlagReg::Eqeq)
 		{
 			pc = adr - 1;
 		}
@@ -530,7 +595,7 @@ namespace baz
 	{
 		uint32_t adr = getBytes(baz::UzTip::REG_32);
 
-		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_eqeq) == baz_true)
+		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_eqeq) == baz::FlagReg::Eqeq)
 		{
 			pc = adr - 1;
 		}
@@ -540,7 +605,7 @@ namespace baz
 	{
 		uint32_t adr = getBytes(baz::UzTip::REG_32);
 
-		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_greater) == baz_true)
+		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_greater) == baz::FlagReg::Greater)
 		{
 			pc = adr - 1;
 		}
@@ -550,7 +615,7 @@ namespace baz
 	{
 		uint32_t adr = getBytes(baz::UzTip::REG_32);
 
-		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_less) == baz_true)
+		if ((m_registerFile[baz::RegName::Flag] & baz_maskFlagReg_less) == baz::FlagReg::Less)
 		{
 			pc = adr - 1;
 		}
@@ -626,21 +691,23 @@ namespace baz
 	{
 		baz::RegisterPart regPart = getRegisterPart();
 
+		m_registerFile[baz::RegName::Flag] = 0;
+
 		switch (m_komut)
 		{
 			//TODO uztip
 		case baz::Komut::CMP_rx_ry:
 			if (m_registerFile[regPart.m_rega] == m_registerFile[regPart.m_regb])
 			{
-				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Eqeq;
+				m_registerFile[baz::RegName::Flag] |= baz::FlagReg::Eqeq;
 			}
 			if(m_registerFile[regPart.m_rega] < m_registerFile[regPart.m_regb])
 			{
-				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Less;
+				m_registerFile[baz::RegName::Flag] |= baz::FlagReg::Less;
 			}
 			if (m_registerFile[regPart.m_rega] > m_registerFile[regPart.m_regb])
 			{
-				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Greater;
+				m_registerFile[baz::RegName::Flag] |= baz::FlagReg::Greater;
 			}
 
 			break;
@@ -653,15 +720,15 @@ namespace baz
 
 			if (m_registerFile[regPart.m_rega] == value)
 			{
-				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Eqeq;
+				m_registerFile[baz::RegName::Flag] |= baz::FlagReg::Eqeq;
 			}
 			if (m_registerFile[regPart.m_rega] < value)
 			{
-				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Less;
+				m_registerFile[baz::RegName::Flag] |= baz::FlagReg::Less;
 			}
 			if (m_registerFile[regPart.m_rega] > value)
 			{
-				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Greater;
+				m_registerFile[baz::RegName::Flag] |= baz::FlagReg::Greater;
 			}
 			break;
 		}			
@@ -670,15 +737,15 @@ namespace baz
 
 			if (m_registerFile[regPart.m_rega] == value)
 			{
-				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Eqeq;
+				m_registerFile[baz::RegName::Flag] |= baz::FlagReg::Eqeq;
 			}
 			if (m_registerFile[regPart.m_rega] < value)
 			{
-				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Less;
+				m_registerFile[baz::RegName::Flag] |= baz::FlagReg::Less;
 			}
 			if (m_registerFile[regPart.m_rega] > value)
 			{
-				m_registerFile[baz::RegName::Flag] = baz::FlagReg::Greater;
+				m_registerFile[baz::RegName::Flag] |= baz::FlagReg::Greater;
 			}
 			break;
 		}
@@ -790,8 +857,67 @@ namespace baz
 
 			//std::cout << std::hex << ((data & mask) >> 8 * i) << "\n";
 			//std::cout << adr << "|" << (int)m_ram[adr] << "\n";
-			adr++;
+			
+			adr++;			
 		}
+	}
+
+	void Emu::storeBytesToStack(uint32_t data, baz::UzTip uz)
+	{
+		int i = 0;
+
+		switch (uz)
+		{
+		case baz::UzTip::REG_32:
+			i = 3;
+			break;
+
+		case baz::UzTip::REG_16:
+			i = 1;
+			break;
+
+		case baz::UzTip::REG_8:
+			i = 0;
+			break;
+		}
+
+		uint32_t& adr = m_registerFile[baz::RegName::Sp];
+
+		for (; i >= 0; i--)
+		{
+			uint32_t mask = 0x0000'00ff << ((uz - 1 - i) * 8);
+
+			m_ram[adr] = (data & mask) >> 8 * (uz - 1 - i);
+
+			//std::cout << std::hex << ((data & mask) >> 8 * i) << "\n";
+			//std::cout << adr << "|" << (int)m_ram[adr] << "\n";
+
+			adr--;
+		}
+	}
+
+	uint32_t Emu::getBytesFromStack(uint8_t uz)
+	{
+		uint32_t retval = 0;
+		uint32_t temp;
+
+		uint32_t& adr = m_registerFile[baz::RegName::Sp];
+		
+		if (uz == baz::UzTip::REG_8)
+		{
+			adr++;
+			retval = m_ram[adr];
+			return retval;
+		}
+
+		for (size_t i = 0; i < uz; i++)
+		{
+			adr++;
+			temp = m_ram[adr];
+			retval = (retval << 8) | temp;
+		}
+
+		return retval;
 	}
 
 	uint32_t Emu::getBytes(uint8_t uz, uint32_t adr)
@@ -815,5 +941,6 @@ namespace baz
 
 		return retval;
 	}
+
 
 }

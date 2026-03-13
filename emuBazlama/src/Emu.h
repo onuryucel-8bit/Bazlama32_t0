@@ -13,6 +13,8 @@
 #define baz_false 0
 #define baz_true 1
 
+#define baz_StackBaseADR 0x31'5a01
+
 #include <bit>
 #include <sstream>
 
@@ -69,8 +71,8 @@ namespace baz
 		JE  =			   0x70,								SUB_rx_ry =      0x72,	XOR_rx_ry     = 0x73,						FSUB_rx_ry		= 0x76,
 		JG  =			   0x80,								MUL_rx_sayi =    0x82,	CMP_rx_sayi   = 0x83,						FMUL_rx_sayi	= 0x86,
 		JL  =			   0x90,								MUL_rx_regadr =  0x92,	CMP_rx_regadr = 0x93,						FMUL_rx_regadr  = 0x96,
-																MUL_rx_adr =     0xa2,  CMP_rx_ry     = 0xa3,						FMUL_rx_adr		= 0xa6,
-																MUL_rx_ry =      0xb2,												FMUL_rx_ry		= 0xb6,
+																MUL_rx_adr =     0xa2,  CMP_rx_adr    = 0xa3,						FMUL_rx_adr		= 0xa6,
+																MUL_rx_ry =      0xb2,  CMP_rx_ry     = 0xb3,						FMUL_rx_ry		= 0xb6,
 																DIV_rx_sayi =    0xc2,												FDIV_rx_sayi	= 0xc6,
 																DIV_rx_regadr =  0xd2,												FDIV_rx_regadr	= 0xd6,
 																DIV_rx_adr =	 0xe2,												FDIV_rx_adr		= 0xe6,
@@ -95,8 +97,9 @@ namespace baz
 		void run();
 		std::vector<uint8_t> m_ram;
 		uint32_t getBytes(uint8_t uz, uint32_t adr);
-	private:
 		
+	private:		
+
 		std::shared_ptr<spdlog::logger> m_logger;
 		baz::FileReader fr;
 								
@@ -110,13 +113,16 @@ namespace baz
 
 		void calculate(baz::OperationType type, uint32_t& reg, uint32_t value);
 
-		uint32_t getBytesSafe(uint8_t uz);
+		void printStack();
 
 		//pc++
 		uint32_t getBytes(uint8_t uz);
 
 		void storeBytesToRam(uint32_t data, uint32_t adr, baz::UzTip uz);
-		
+
+		void storeBytesToStack(uint32_t data, baz::UzTip uz);
+
+		uint32_t getBytesFromStack(uint8_t uz);
 		//-----------------------------------//
 		//-----------------------------------//
 		//-----------------------------------//

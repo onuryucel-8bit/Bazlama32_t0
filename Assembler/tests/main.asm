@@ -60,7 +60,7 @@ FUNC drawLineDDA
 		LOAD $rs0, @0001'0001
 		CALL abs
 		
-		/*
+		
 		;r2 abs(deltax)
 		;r1 abs(deltay)
 		
@@ -133,7 +133,7 @@ FUNC drawLineDDA
 			ADD $rs0, 0x01
 		POP $rs0
 		JL drawLoop
-	*/
+	
 RET
 
 /*

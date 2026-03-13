@@ -55,6 +55,7 @@ namespace asmc
 	private:
 
 		void program();
+		void debug();
 
 		void moveCurrentToken();
 	

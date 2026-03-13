@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
 		std::cout << "Expected file path...\n";
 
 #ifdef PRODUCTION_BUILD		
-		std::cout << "Loading default main.asm\n";
+		std::cout << "Loading debug path main.asm\n";
 		path = cmake_PROJECT_ROOT "main.asm";
 #else
 		return 0;

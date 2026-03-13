@@ -143,6 +143,86 @@ Parser::~Parser()
 //-------------------------------------------------//
 //-------------------------------------------------//
 
+void Parser::debug()
+{
+	
+	//----------DEBUG-----------------//
+	if (m_lexer.getDebugFlag())
+	{
+
+		std::cout << rang::fg::blue
+			<< "printing m_symbolTable"
+			<< rang::style::reset
+			<< "\n";
+
+		for (const auto& [key, value] : m_symbolTable)
+		{
+			std::cerr << '[' << key.m_text << "] status [" << magic_enum::enum_name(value.m_status) << "]" << " address[" << value.m_ramIndex << "]\n";
+		}
+
+		std::cerr << rang::bg::green << "printBinHex() BEGIN" << rang::style::reset << "\n";
+
+		for (size_t i = 0; i < m_output.size(); i++)
+		{
+			std::cout << std::hex << "ram[" << m_output[i].m_ramIndex << "] | " << std::dec;
+			printBinHex(m_output[i]);
+		}
+
+
+
+		std::cerr << rang::bg::green << "printBinHex() END" << rang::style::reset << "\n";
+	}
+
+	//TODO add debug flag
+	std::ofstream file(cmake_PROJECT_OUTPUT "symbolTable.txt");
+
+	if (file.is_open())
+	{
+
+		for (const auto& [key, value] : m_symbolTable)
+		{
+			file << "lineNumber[" << key.m_lineNumber << "] "
+				<< "text[" << key.m_text << "] "
+				<< "status[" << magic_enum::enum_name(value.m_status) << "]\n";
+		}
+
+		file.close();
+	}
+
+	//----------------------------------//
+
+
+	//if symbol info UNDEFINED
+	if (f_error)
+	{
+		std::cout << rang::fg::red
+			<< "Undefined symbol detected"
+			<< rang::style::reset
+			<< "\n";
+		return;
+	}
+
+	//--------------------------------------------------------------//
+	//Generate output Emu/logisim RAM
+	//--------------------------------------------------------------//
+
+	//is file empty
+	if (m_ramLocation != 0)
+	{
+		if (m_lexer.getDebugFlag())
+		{
+			std::cout << rang::bg::blue << "Generating output file..." << rang::style::reset << "\n";
+		}
+		writeOutput();
+	}
+
+	//TODO disassembler flag
+	m_disassembler.run(m_output);
+
+
+	
+}
+
 void Parser::run()
 {	
 	//--------------------------------------------------------------//
@@ -156,17 +236,8 @@ void Parser::run()
 
 	moveCurrentToken();
 	
-
 	while (m_currentToken.m_type != asmc::TokenType::ENDOFFILE)
 	{							
-#ifdef PRODUCTION_BUILD
-		if (m_currentToken.m_type == asmc::TokenType::HLT) 
-		{
-			std::cout << "!\n";
-		}
-#endif // PRODUCTION_BUILD
-
-
 		program();		
 
 		if (m_peekToken.m_type == asmc::TokenType::ENDOFFILE)
@@ -207,67 +278,11 @@ void Parser::run()
 	//check tables / print opcode hex
 	//--------------------------------------------------------------//
 
-
 	checkTables();
 
-	//----------DEBUG-----------------//
-	if (m_lexer.getDebugFlag())
-	{
-		
-		std::cout << rang::fg::blue
-			<< "printing m_symbolTable"
-			<< rang::style::reset
-			<< "\n";
+	debug();
 
-		for (const auto& [key, value] : m_symbolTable)
-		{
-			std::cerr << '[' << key.m_text << "] status [" << magic_enum::enum_name(value.m_status) << "]" << " address[" << value.m_ramIndex << "]\n";
-		}
-				
-		std::cerr << rang::bg::green << "printBinHex() BEGIN"<< rang::style::reset << "\n";
-
-		for (size_t i = 0; i < m_output.size(); i++)
-		{
-			std::cout << std::hex << "ram[" << m_output[i].m_ramIndex << "] | " << std::dec;
-			printBinHex(m_output[i]);
-		}
-
-
-
-		std::cerr << rang::bg::green << "printBinHex() END" << rang::style::reset << "\n";
-	}
-	//----------------------------------//
-
-
-	//if symbol info UNDEFINED
-	if (f_error)
-	{
-		std::cout << rang::fg::red
-			<< "Undefined symbol detected"
-			<< rang::style::reset
-			<< "\n";		
-		return;
-	}
-
-	//--------------------------------------------------------------//
-	//Generate output Emu/logisim RAM
-	//--------------------------------------------------------------//
-
-	//is file empty
-	if (m_ramLocation != 0)
-	{
-		if (m_lexer.getDebugFlag())
-		{
-			std::cout << rang::bg::blue << "Generating output file..." << rang::style::reset << "\n";
-		}
-		writeOutput();
-	}	
-	
-	//TODO disassembler flag
-	m_disassembler.run(m_output);
-	
-
-	std::cerr <<"Total: " <<timer.getElapsedTime_milliseconds() << "ms passed..." << "\n";
+	std::cerr << "Total: " << timer.getElapsedTime_milliseconds() << "ms passed..." << "\n";
 }
 
 
@@ -548,6 +563,7 @@ void Parser::program()
 }
 
 
+
 //-------------------------------------------------//
 //------------------PRINT_X()----------------------//
 //-------------------------------------------------//
@@ -765,6 +781,7 @@ asmc::MemoryLayout Parser::parseOperand(asmc::TokenType type)
 	switch (m_currentToken.m_type)
 	{
 	case asmc::TokenType::HEXNUMBER:
+	case asmc::TokenType::DECIMAL:
 		memlay.m_opcode = asmc_CombineModBits(type, asmc_MOD_Number);
 
 		//------/
@@ -772,6 +789,11 @@ asmc::MemoryLayout Parser::parseOperand(asmc::TokenType type)
 		memlay.m_regPart = asmc_CombineRegPart(memlay.m_regPart, regType, rega, 0);
 		//------/
 		
+		if (m_currentToken.m_type == asmc::TokenType::DECIMAL)
+		{
+			m_currentToken.m_text = rdx::decToHex(std::stoi(m_currentToken.m_text));
+		}
+
 		memlay.m_packetSize = regType + 1;
 		memlay.m_packet = new uint8_t[regType + 1];
 

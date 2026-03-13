@@ -27,7 +27,7 @@ namespace baz
 {
 	constexpr size_t KB = 1024;
 	constexpr size_t MB = 1024 * KB;
-	constexpr size_t GB = 1024 * MB;
+	constexpr size_t GB = 1024 * MB;	
 
 	enum FlagReg
 	{

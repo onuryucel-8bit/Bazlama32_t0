@@ -116,7 +116,7 @@ FUNC drawLineDDA
 		
 		;r0,r1,r2
 		;x0,y0,color
-		;CALL DrawPixel
+		CALL DrawPixel
 		
 		;currentX += incX
 		FADD $rs0, $rs4

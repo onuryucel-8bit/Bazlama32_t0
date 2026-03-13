@@ -39,7 +39,7 @@
 	(m_opcodeHexTable[opcode]) + (modBits << 4)
 
 #define asmc_CombineRegPart(regPart, reguz, rega, regb) \
-	regPart | ((reguz << 6) | (rega << 3) | regb)
+	regPart | ((reguz << 6) | (rega << 3) | regb)									
 
 namespace asmc
 {	

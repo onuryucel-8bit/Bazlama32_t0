@@ -45,12 +45,15 @@ namespace baz
 			if (enmKmt.has_value())
 			{				
 				//std::cout << std::hex << pc << "|" << magic_enum::enum_name(enmKmt.value()) << "\n";
+				std::stringstream ss;
+				ss << "komut : " << magic_enum::enum_name(enmKmt.value());
+				spdlog::info(ss.str());
 			}				
-			
-			/*std::stringstream ss;
+			/*
+			std::stringstream ss;
 			ss << "DEBUG :: RET adr: " << std::hex << m_registerFile[baz::RegName::Sp];
-			spdlog::info(ss.str());*/
-
+			spdlog::info(ss.str());
+			*/
 			//m_logger.get()->info(ss.str());
 #endif // PRODUCTION_BUILD
 

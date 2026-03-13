@@ -777,6 +777,8 @@ asmc::MemoryLayout Parser::parseOperand(asmc::TokenType type)
 	rega = rdx::hexToDec8(m_currentToken.m_text);
 	m_ramLocation++;
 
+	
+
 	moveCurrentToken();
 	switch (m_currentToken.m_type)
 	{
@@ -1473,12 +1475,18 @@ void Parser::parseLogicPart()
 	switch (m_currentToken.m_type)
 	{
 	case asmc::TokenType::HEXNUMBER:
+	case asmc::TokenType::DECIMAL:
 		memlay.m_opcode = asmc_CombineModBits(tokentype, asmc_MOD_Number);
 		
 
 		//----------//		
 		m_ramLocation++;
 		//----------//
+
+		if (m_currentToken.m_type == asmc::TokenType::DECIMAL)
+		{
+			m_currentToken.m_text = rdx::decToHex(std::stoi(m_currentToken.m_text));
+		}
 
 		memlay.m_regPart = asmc_CombineRegPart(memlay.m_regPart, regtype, rega, 0);
 

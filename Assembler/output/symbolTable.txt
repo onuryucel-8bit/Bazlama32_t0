@@ -1,0 +1,7 @@
+lineNumber[41] text[DRAWLINEDDA] status[No_Call]
+lineNumber[96] text[L2] status[Used]
+lineNumber[73] text[ABS] status[No_Call]
+lineNumber[142] text[DRAWPIXEL] status[No_Call]
+lineNumber[132] text[DRAWLOOP] status[Used]
+lineNumber[89] text[L0] status[Used]
+lineNumber[93] text[L1] status[Used]

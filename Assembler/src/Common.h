@@ -18,11 +18,11 @@ namespace dasm
 		JG  =			   0x80,								MUL_rx_sayi =    0x82,	CMP_rx_sayi   = 0x83,						FMUL_rx_sayi	= 0x86,
 		JL  =			   0x90,								MUL_rx_regadr =  0x92,	CMP_rx_regadr = 0x93,						FMUL_rx_regadr  = 0x96,
 																MUL_rx_adr =     0xa2,  CMP_rx_adr    = 0xa3,						FMUL_rx_adr		= 0xa6,
-																MUL_rx_ry =      0xb2,  CMP_rx_ry     = 0xb3,						 FMUL_rx_ry		= 0xb6,
-																DIV_rx_sayi =    0xc2,												FDIV_rx_sayi	= 0xc6,
-																DIV_rx_regadr =  0xd2,												FDIV_rx_regadr	= 0xd6,
-																DIV_rx_adr =	 0xe2,												FDIV_rx_adr		= 0xe6,
-																DIV_rx_ry =		 0xf2,												FDIV_rx_ry		= 0xf6,
+																MUL_rx_ry =      0xb2,  CMP_rx_ry     = 0xb3,						FMUL_rx_ry		= 0xb6,
+																DIV_rx_sayi =    0xc2,	SAR_rx_sayi	  = 0xc3,						FDIV_rx_sayi	= 0xc6,
+																DIV_rx_regadr =  0xd2,	SAR_rx_ry	  = 0xd3,   					FDIV_rx_regadr	= 0xd6,
+																DIV_rx_adr =	 0xe2,	SAL_rx_sayi   = 0xe3,   					FDIV_rx_adr		= 0xe6,
+																DIV_rx_ry =		 0xf2,	SAL_rx_ry	  = 0xf3,   					FDIV_rx_ry		= 0xf6,
 	};
 }
 

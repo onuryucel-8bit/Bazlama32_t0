@@ -43,6 +43,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 if(PRODUCTION_BUILD)
 	# setup the ASSETS_PATH macro to be in the root folder of your exe
 	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC cmake_PROJECT_ROOT="./tests/") 
+    
+    get_filename_component(PARENT_DIR "${CMAKE_SOURCE_DIR}" DIRECTORY)
+    set(EMU_TEST_DIR "${PARENT_DIR}/emuBazlama/tests/")
+
+    target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC cmake_EMU_HEX_OUTPUT_PATH="${EMU_TEST_DIR}") 
 
 	# remove the option to debug asserts.
 	target_compile_definitions("${CMAKE_PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=1) 

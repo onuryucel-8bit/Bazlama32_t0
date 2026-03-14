@@ -115,6 +115,8 @@ Parser::Parser(asmc::Lexer& lexer)
 	m_opcodeHexTable[asmc::TokenType::OR] =  0x63;
 	m_opcodeHexTable[asmc::TokenType::XOR] = 0x73;
 	m_opcodeHexTable[asmc::TokenType::NOT] = 0x53;
+	m_opcodeHexTable[asmc::TokenType::SAR] = 0xc3;
+	m_opcodeHexTable[asmc::TokenType::SAL] = 0xe3;
 
 	m_opcodeHexTable[asmc::TokenType::SHL] = 0x03;
 	m_opcodeHexTable[asmc::TokenType::SHR] = 0x23;
@@ -300,8 +302,13 @@ void Parser::writeOutput()
 	//--------------------------------------------------------------//
 	//output EMU file
 	//--------------------------------------------------------------//
-
+#ifdef PRODUCTION_BUILD
+	std::ofstream file(cmake_EMU_HEX_OUTPUT_PATH "emuHex.txt");
+#else
 	std::ofstream file(cmake_PROJECT_OUTPUT "emuHex.txt");
+#endif // PRODUCTION_BUILD
+
+
 
 	if (file.is_open())
 	{		
@@ -528,6 +535,8 @@ void Parser::program()
 	case asmc::TokenType::AND:
 	case asmc::TokenType::OR:
 	case asmc::TokenType::XOR:
+	case asmc::TokenType::SAR:
+	case asmc::TokenType::SAL:
 		parseLogicPart();
 		break;
 
@@ -768,7 +777,7 @@ asmc::MemoryLayout Parser::parseOperand(asmc::TokenType type)
 	asmc::MemoryLayout memlay;
 
 	memlay.m_ramIndex = m_ramLocation;
-	m_ramLocation++;
+	m_ramLocation++;	
 
 	moveCurrentToken();
 	uint8_t rega, regb, opcode;
@@ -1498,7 +1507,10 @@ void Parser::parseLogicPart()
 		break;
 
 	case asmc::TokenType::REGISTER:
-		if (tokentype == asmc::TokenType::SHL || tokentype == asmc::TokenType::SHR)
+		if (tokentype == asmc::TokenType::SHL || 
+			tokentype == asmc::TokenType::SHR ||
+			tokentype == asmc::TokenType::SAR ||
+			tokentype == asmc::TokenType::SAL)
 		{
 			memlay.m_opcode = asmc_CombineModBits(tokentype, 1);
 		}

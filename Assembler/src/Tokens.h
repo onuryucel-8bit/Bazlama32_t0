@@ -43,6 +43,8 @@ namespace asmc
 		SUB,
 		MUL,
 		DIV,
+		SAR,
+		SAL,
 
 		FADD,
 		FSUB,

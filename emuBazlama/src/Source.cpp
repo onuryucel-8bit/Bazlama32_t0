@@ -64,7 +64,7 @@
 
 #include "SDL3/SDL.h"
 
-baz::Emu emu(cmake_PROJECT_TESTS "emu.txt");
+baz::Emu emu(cmake_PROJECT_TESTS "emuHex.txt");
 
 uint16_t getBytes_t0(uint8_t uz, uint32_t adr)
 {
@@ -86,56 +86,71 @@ int main()
 	
 	emu.run();
 
-	//int windowWidth = 800;
-	//int windowHeight = 600;
+	int windowWidth = 800;
+	int windowHeight = 600;
 
-	//SDL_Window* window = SDL_CreateWindow("bazlama", windowWidth, windowHeight, SDL_WINDOW_FULLSCREEN);
+	SDL_Window* window = SDL_CreateWindow("bazlama", windowWidth, windowHeight, SDL_WINDOW_FULLSCREEN);
 
-	//SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
+	SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
 
-	//using Color_t = uint16_t;
+	using Color_t = uint16_t;
 
-	//Color_t* colorBuffer = new Color_t[windowWidth * windowHeight];
+	Color_t* colorBuffer = new Color_t[windowWidth * windowHeight];
 
-	//for (size_t i = 0; i < windowWidth*windowHeight; i++)
-	//{
-	//	colorBuffer[i] = getBytes_t0(baz::UzTip::REG_16, 0x0311'5A00 + (i * 2) );
-	//}	
+	for (size_t i = 0; i < windowWidth * windowHeight; i++)
+	{
+		colorBuffer[i] = 0;
+	}
 
-	//SDL_Texture* canvas = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB4444, SDL_TEXTUREACCESS_STREAMING, windowWidth, windowHeight);
-	//
-	//bool f_running = true;
-	//while (f_running)
-	//{
-	//	SDL_Event event;
-	//	while (SDL_PollEvent(&event))
-	//	{
-	//		if (event.type == SDL_EVENT_QUIT)
-	//		{
-	//			f_running = false;
-	//		}
+	for (size_t i = 0x0311'5A00; i < 0x0311'5A00 + 100; i++)
+	{
+		std::cout << std::hex << i << ":[" << (int)emu.m_ram[i] << "]\n";
+	}
 
-	//		switch (event.key.key)
-	//		{
-	//		case SDLK_ESCAPE:
-	//			f_running = false;
-	//			break;
-	//		}
-	//	}
-	//	SDL_RenderClear(renderer);
+	for (size_t i = 0; i < windowWidth*windowHeight; i++)
+	{
+		colorBuffer[i] = getBytes_t0(baz::UzTip::REG_16, 0x0311'5A00 + (i * 2) );
 
-	//	//load colorbuffer
-	//	SDL_UpdateTexture(canvas, NULL, colorBuffer, (int)(windowWidth * sizeof(Color_t)));
+		if (colorBuffer[i] != 0)
+		{
+			std::cout << std::hex << "colorbuffer[i]:: " << colorBuffer[i] << "[" << i  << "]\n";
+		}
+	}	
 
-	//	//make it pixaled
-	//	SDL_SetTextureScaleMode(canvas, SDL_SCALEMODE_NEAREST);
+	SDL_Texture* canvas = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB4444, SDL_TEXTUREACCESS_STREAMING, windowWidth, windowHeight);
+	
+	bool f_running = true;
+	while (f_running)
+	{
+		SDL_Event event;
+		while (SDL_PollEvent(&event))
+		{
+			if (event.type == SDL_EVENT_QUIT)
+			{
+				f_running = false;
+			}
 
-	//	//render canvas
-	//	SDL_RenderTexture(renderer, canvas, NULL, NULL);
+			switch (event.key.key)
+			{
+			case SDLK_ESCAPE:
+				f_running = false;
+				break;
+			}
+		}
+		SDL_RenderClear(renderer);
 
-	//	//swap buffers
-	//	SDL_RenderPresent(renderer);
-	//}
+		//load colorbuffer
+		SDL_UpdateTexture(canvas, NULL, colorBuffer, (int)(windowWidth * sizeof(Color_t)));
+
+		//make it pixaled
+		SDL_SetTextureScaleMode(canvas, SDL_SCALEMODE_NEAREST);
+
+		//render canvas
+		SDL_RenderTexture(renderer, canvas, NULL, NULL);
+
+		//swap buffers
+		SDL_RenderPresent(renderer);
+	}
 
 	/*int a = 5;
 	int b = -5;

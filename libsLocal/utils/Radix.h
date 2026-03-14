@@ -47,28 +47,28 @@ namespace rdx {
     //----------------------------------------------------------------//
 
     /*
-    *
-    *  #include <bit>
-    *  uint32_t reg = 5;
-    *  float a = std::bit_cast<float>(reg);
-    * 
+      ==Use this==
+       #include <bit>
+       uint32_t reg = 5;
+       float a = std::bit_cast<float>(reg);
+       uint32_t => float
     */ 
 
-
+    //ieee 0x4f800000 => fx => 4.29...
     inline float IEEE754_toFloat(uint32_t val)
     {
         float result;
-        std::memcpy(&result, &val, sizeof(result));
+        std::memcpy(&result, &val, sizeof(float));
         return result;
     }
-
-    inline uint32_t IEEE754_toInt(uint32_t value)
+    //4.29 => fx => ieee 0x4f800000
+    inline uint32_t decToIEEE754_32(float decf)
     {
-        float retval = rdx::IEEE754_toFloat(value);
-
-        return (uint32_t)retval;
+        uint32_t result;
+        std::memcpy(&result, &decf, sizeof(uint32_t));
+        return result;
     }
-
+    //4.29 => fx => ieee "4f800000"
     inline std::string hexIEEE754_32ToStr(uint32_t value)
     {
         std::stringstream ss;
@@ -77,13 +77,12 @@ namespace rdx {
         return ss.str();
     }
     
-	inline uint32_t decToIEEE754_32(float decf)
-	{
-		uint32_t result;
-		std::memcpy(&result, &decf, sizeof(result));
-		return result;
-	}
-
+    inline uint32_t IEEE754_toInt(uint32_t value)
+    { 
+        float fval = IEEE754_toFloat(value);
+        return (uint32_t)std::truncf(fval);
+    }      	
+    //"4.29" => fx => ieee 0x4f800000
 	inline uint32_t decToIEEE754_32(std::string decf)
 	{
 		uint32_t result;

@@ -38,21 +38,20 @@ namespace baz
 		while (m_ram[pc] != baz::Komut::HLT)
 		{			
 		
-			m_komut = m_ram[pc];
+ 			m_komut = m_ram[pc];
 
 			if (m_komut == baz::Komut::FTOI_rx)
 			{
-				std::cout << "!\n";
+				//std::cout << "!\n";
 			}
+
+			
 
 #ifdef _DEBUG			
 			auto enmKmt = magic_enum::enum_cast<baz::Komut>(m_komut);
 			if (enmKmt.has_value())
-			{				
-				//std::cout << std::hex << pc << "|" << magic_enum::enum_name(enmKmt.value()) << "\n";
-				std::stringstream ss;
-				ss << "komut : " << magic_enum::enum_name(enmKmt.value());
-				spdlog::info(ss.str());
+			{								
+				spdlog::info("komut : {}", magic_enum::enum_name(*enmKmt));
 			}				
 			/*
 			std::stringstream ss;
@@ -66,9 +65,10 @@ namespace baz
 			//if (pc == 0x95)
 			//JL
 			//if (pc == 0xa2)
-			//{
-				//std::cout << "debug\n";
-			//}
+			/*if (pc == 0x24)
+			{
+				std::cout << "debug\n";
+			}*/
 
 			
 
@@ -133,6 +133,10 @@ namespace baz
 				case baz::Komut::SHL_rx_sayi:
 				case baz::Komut::SHR_rx_ry:
 				case baz::Komut::SHR_rx_sayi:
+				case baz::Komut::SAR_rx_ry:
+				case baz::Komut::SAR_rx_sayi:
+				case baz::Komut::SAL_rx_ry:
+				case baz::Komut::SAL_rx_sayi:
 					op_Shift();
 					break;
 
@@ -167,8 +171,28 @@ namespace baz
 				case baz::Komut::FADD_rx_regadr:
 				case baz::Komut::FADD_rx_ry:
 				case baz::Komut::FADD_rx_sayi:
+				case baz::Komut::FDIV_rx_sayi:
+				case baz::Komut::FDIV_rx_regadr:
+				case baz::Komut::FDIV_rx_adr:
+				case baz::Komut::FDIV_rx_ry:
 					op_floatArithmetic();
-					break;			
+					break;
+
+				case baz::Komut::XOR_rx_ry:
+					op_XOR();
+					break;
+
+				case baz::Komut::OR_rx_ry:
+					op_OR();
+					break;
+
+				case baz::Komut::AND_rx_ry:
+					op_AND();
+					break;
+
+				case baz::Komut::NOT_rx:
+					op_NOT();
+					break;
 			}
 					
   			pc++;
@@ -222,10 +246,11 @@ namespace baz
 	//TODO template
 	void Emu::calculate(baz::OperationType type, uint32_t& reg, uint32_t value)
 	{
+
 		switch (type)
 		{
 		case baz::OperationType::Add:
-			reg += value;			
+			reg += value;
 			break;
 
 		case baz::OperationType::Sub:
@@ -239,7 +264,42 @@ namespace baz
 		case baz::OperationType::Div:
 			reg /= value;
 			break;
+		}		
+	}
+
+	void Emu::calculateFloat(baz::OperationType type, uint32_t& reg, uint32_t value)
+	{
+		float rx = std::bit_cast<float>(reg);
+		float val = std::bit_cast<float>(value);
+
+
+		switch (type)
+		{
+		case baz::OperationType::Add:
+			rx += val;
+			break;
+
+		case baz::OperationType::Sub:
+			rx -= val;
+			break;
+
+		case baz::OperationType::Mul:
+			rx *= val;
+			break;
+
+		case baz::OperationType::Div:
+			if (val == 0)
+			{
+				rx = 0;
+			}
+			else
+			{
+				rx /= val;
+			}
+			break;
 		}
+
+		reg = rdx::decToIEEE754_32(rx);
 	}
 
 	void Emu::printStack()
@@ -283,10 +343,7 @@ namespace baz
 			case baz::Komut::ADD_rx_regadr:
 			case baz::Komut::ADD_rx_adr:
 			case baz::Komut::ADD_rx_ry:
-			case baz::Komut::FADD_rx_adr:
-			case baz::Komut::FADD_rx_regadr:
-			case baz::Komut::FADD_rx_ry:
-			case baz::Komut::FADD_rx_sayi:
+
 				operationType = baz::OperationType::Add;
 				break;
 
@@ -294,10 +351,7 @@ namespace baz
 			case baz::Komut::SUB_rx_regadr:
 			case baz::Komut::SUB_rx_adr:
 			case baz::Komut::SUB_rx_ry:
-			case baz::Komut::FSUB_rx_adr:
-			case baz::Komut::FSUB_rx_regadr:
-			case baz::Komut::FSUB_rx_ry:
-			case baz::Komut::FSUB_rx_sayi:
+			
 				operationType = baz::OperationType::Sub;
 				break;
 
@@ -305,10 +359,7 @@ namespace baz
 			case baz::Komut::MUL_rx_regadr:
 			case baz::Komut::MUL_rx_adr:
 			case baz::Komut::MUL_rx_ry:
-			case baz::Komut::FMUL_rx_adr:
-			case baz::Komut::FMUL_rx_regadr:
-			case baz::Komut::FMUL_rx_ry:
-			case baz::Komut::FMUL_rx_sayi:
+			
 				operationType = baz::OperationType::Mul;
 				break;
 
@@ -316,10 +367,7 @@ namespace baz
 			case baz::Komut::DIV_rx_regadr:
 			case baz::Komut::DIV_rx_adr:
 			case baz::Komut::DIV_rx_ry:
-			case baz::Komut::FDIV_rx_adr:
-			case baz::Komut::FDIV_rx_regadr:
-			case baz::Komut::FDIV_rx_ry:
-			case baz::Komut::FDIV_rx_sayi:
+			
 				operationType = baz::OperationType::Div;
 				break;
 		}
@@ -331,10 +379,6 @@ namespace baz
 		case baz::Komut::SUB_rx_sayi:
 		case baz::Komut::MUL_rx_sayi:
 		case baz::Komut::DIV_rx_sayi:
-		case baz::Komut::FADD_rx_sayi:
-		case baz::Komut::FSUB_rx_sayi:
-		case baz::Komut::FMUL_rx_sayi:
-		case baz::Komut::FDIV_rx_sayi:
 
 			value = getBytes(regPart.m_reguz);			
 			break;
@@ -344,10 +388,6 @@ namespace baz
 		case baz::Komut::SUB_rx_regadr:
 		case baz::Komut::MUL_rx_regadr:
 		case baz::Komut::DIV_rx_regadr:
-		case baz::Komut::FADD_rx_regadr:
-		case baz::Komut::FSUB_rx_regadr:
-		case baz::Komut::FMUL_rx_regadr:
-		case baz::Komut::FDIV_rx_regadr:
 
 			value = getBytes(regPart.m_reguz, m_registerFile[regPart.m_regb]);			
 			break;
@@ -357,10 +397,6 @@ namespace baz
 		case baz::Komut::SUB_rx_adr:
 		case baz::Komut::MUL_rx_adr:
 		case baz::Komut::DIV_rx_adr:
-		case baz::Komut::FADD_rx_adr:
-		case baz::Komut::FSUB_rx_adr:
-		case baz::Komut::FMUL_rx_adr:
-		case baz::Komut::FDIV_rx_adr:
 
 			//adr
 			value = getBytes(baz::UzTip::REG_32);
@@ -371,17 +407,14 @@ namespace baz
 		case baz::Komut::ADD_rx_ry:
 		case baz::Komut::SUB_rx_ry:
 		case baz::Komut::MUL_rx_ry:
-		case baz::Komut::DIV_rx_ry:
-		case baz::Komut::FADD_rx_ry:
-		case baz::Komut::FSUB_rx_ry:
-		case baz::Komut::FMUL_rx_ry:
-		case baz::Komut::FDIV_rx_ry:
-
+		case baz::Komut::DIV_rx_ry:		
 			value = m_registerFile[regPart.m_regb];
 			break;
 		}		
-
+		
 		calculate(operationType, m_registerFile[regPart.m_rega], value);
+
+		//std::cout << (int)m_registerFile[regPart.m_rega] << "\n";
 	}
 
 	void Emu::op_STR()
@@ -424,11 +457,21 @@ namespace baz
 				break;
 
 			case baz::Komut::STR_adr_p_reg_ry:
-
+			{
 				adr = getBytes(baz::UzTip::REG_32);
 
-				storeBytesToRam(m_registerFile[regPart.m_regb], adr + m_registerFile[regPart.m_rega], regPart.m_reguz);
+				uint32_t dest = adr + m_registerFile[regPart.m_rega];
+
+				storeBytesToRam(m_registerFile[regPart.m_regb], dest , regPart.m_reguz);
+
+				/*std::cout << "---------------------------------------------\n";
+				std::cout << std::hex << dest << "|" << (int)m_ram[dest] << "\n";
+				std::cout << std::hex << dest + 1<< "|" << (int)m_ram[dest + 1] << "\n";
+				std::cout << "---------------------------------------------\n";*/
+
 				break;
+			}
+
 			}
 			break;
 		}
@@ -480,7 +523,9 @@ namespace baz
 			}
 		}
 
-		//printStack();
+#ifdef _DEBUG
+		printStack();
+#endif
 	}
 
 	void Emu::op_RET()
@@ -503,8 +548,9 @@ namespace baz
 		{
 			pc = getBytesFromStack(baz::UzTip::REG_32);			
 		}		
-
-		//printStack();
+#ifdef _DEBUG
+		printStack();
+#endif
 	}
 
 	void Emu::op_IRET()
@@ -527,7 +573,9 @@ namespace baz
 		//TODO uztip reg16,8
 		storeBytesToStack(m_registerFile[regPart.m_rega], baz::UzTip::REG_32);				
 
-		//printStack();
+#ifdef _DEBUG
+		printStack();
+#endif
 	}
 
 	void Emu::op_POP()
@@ -544,7 +592,9 @@ namespace baz
 				
 		m_registerFile[regPart.m_rega] = getBytesFromStack(baz::UzTip::REG_32);;
 
-		//printStack();
+#ifdef _DEBUG
+		printStack();
+#endif
 	}
 
 	void Emu::op_PUSHA()
@@ -647,14 +697,14 @@ namespace baz
 	{
 		baz::RegisterPart regPart = getRegisterPart();
 
-		m_registerFile[regPart.m_rega] = ~m_registerFile[regPart.m_rega];
+		m_registerFile[regPart.m_rega] = ~m_registerFile[regPart.m_regb];
 	}
 
 	void Emu::op_XOR()
 	{
 		baz::RegisterPart regPart = getRegisterPart();
 
-		m_registerFile[regPart.m_rega] ^= m_registerFile[regPart.m_rega];
+		m_registerFile[regPart.m_rega] ^= m_registerFile[regPart.m_regb];
 	}
 
 	void Emu::op_Shift()
@@ -683,6 +733,31 @@ namespace baz
 			value = getBytes(regPart.m_reguz);
 
 			m_registerFile[regPart.m_rega] >>= value;
+			break;
+
+		case baz::Komut::SAR_rx_ry:
+			std::cout << "SAR_rx_ry !!!\n";
+			break;
+
+		//TODO SAR_rx_sayi bit
+		case baz::Komut::SAR_rx_sayi:
+		{
+			uint32_t bit = m_registerFile[regPart.m_rega] & 0x8000'0000;
+
+			value = getBytes(regPart.m_reguz);
+
+			m_registerFile[regPart.m_rega] >>= value;
+
+			m_registerFile[regPart.m_rega] |= bit;
+
+			break;
+		}
+		case baz::Komut::SAL_rx_ry:
+			std::cout << "SAL_rx_ry !!!\n";
+			break;
+
+		case baz::Komut::SAL_rx_sayi:
+			std::cout << "SAL_rx_sayi !!!\n";
 			break;
 		}
 	}
@@ -755,27 +830,112 @@ namespace baz
 	{
 		baz::RegisterPart regPart = getRegisterPart();
 
-		m_registerFile[regPart.m_rega] = rdx::IEEE754_toInt(m_registerFile[regPart.m_rega]);
+		float test = std::bit_cast<float>(m_registerFile[regPart.m_rega]);
+
+		float intPart, dlt;
+
+		dlt = std::modf(test, &intPart);
+
+		int intPARRT = (int)intPart;
+		
+
+		uint32_t rx = rdx::IEEE754_toInt(m_registerFile[regPart.m_rega]);
+								
+		m_registerFile[regPart.m_rega] = rx;
 	}
 
 	void Emu::op_ITOF()
 	{		
 		baz::RegisterPart regPart = getRegisterPart();
 
+		float rx = std::bit_cast<float>(m_registerFile[regPart.m_rega]);
+
 		m_registerFile[regPart.m_rega] = rdx::decToIEEE754_32(m_registerFile[regPart.m_rega]);
 	}
 
 	void Emu::op_floatArithmetic()
 	{
-		//TODO digerlerini ekle
 		baz::RegisterPart regPart = getRegisterPart();
 
-		float rx = std::bit_cast<float>(m_registerFile[regPart.m_rega]);
-		float ry = std::bit_cast<float>(m_registerFile[regPart.m_regb]);
+		uint32_t value = 0;
+		baz::OperationType operationType = baz::OperationType::Add;
 
-		rx += ry;
+		switch (m_komut)
+		{
+		case baz::Komut::FADD_rx_sayi:
+		case baz::Komut::FADD_rx_regadr:
+		case baz::Komut::FADD_rx_adr:
+		case baz::Komut::FADD_rx_ry:
 
-		m_registerFile[regPart.m_rega] = rdx::decToIEEE754_32(rx);
+			operationType = baz::OperationType::Add;
+			break;
+
+		case baz::Komut::FSUB_rx_sayi:
+		case baz::Komut::FSUB_rx_regadr:
+		case baz::Komut::FSUB_rx_adr:
+		case baz::Komut::FSUB_rx_ry:
+
+			operationType = baz::OperationType::Sub;
+			break;
+
+		case baz::Komut::FMUL_rx_sayi:
+		case baz::Komut::FMUL_rx_regadr:
+		case baz::Komut::FMUL_rx_adr:
+		case baz::Komut::FMUL_rx_ry:
+
+			operationType = baz::OperationType::Mul;
+			break;
+
+		case baz::Komut::FDIV_rx_sayi:
+		case baz::Komut::FDIV_rx_regadr:
+		case baz::Komut::FDIV_rx_adr:
+		case baz::Komut::FDIV_rx_ry:
+
+			operationType = baz::OperationType::Div;
+			break;
+		}
+
+		switch (m_komut)
+		{
+			//add rx,sayi
+		case baz::Komut::FADD_rx_sayi:
+		case baz::Komut::FSUB_rx_sayi:
+		case baz::Komut::FMUL_rx_sayi:
+		case baz::Komut::FDIV_rx_sayi:
+
+			value = getBytes(regPart.m_reguz);
+			break;
+
+			//add rx,@ry
+		case baz::Komut::FADD_rx_regadr:
+		case baz::Komut::FSUB_rx_regadr:
+		case baz::Komut::FMUL_rx_regadr:
+		case baz::Komut::FDIV_rx_regadr:
+
+			value = getBytes(regPart.m_reguz, m_registerFile[regPart.m_regb]);
+			break;
+
+			//add rx,@adr
+		case baz::Komut::FADD_rx_adr:
+		case baz::Komut::FSUB_rx_adr:
+		case baz::Komut::FMUL_rx_adr:
+		case baz::Komut::FDIV_rx_adr:
+
+			//adr
+			value = getBytes(baz::UzTip::REG_32);
+			m_registerFile[regPart.m_rega] += m_ram[value];
+			break;
+
+			//add rx,ry
+		case baz::Komut::FADD_rx_ry:
+		case baz::Komut::FSUB_rx_ry:
+		case baz::Komut::FMUL_rx_ry:
+		case baz::Komut::FDIV_rx_ry:
+			value = m_registerFile[regPart.m_regb];
+			break;
+		}
+
+		calculateFloat(operationType, m_registerFile[regPart.m_rega], value);
 	}
 
 	//============================================================================================================//

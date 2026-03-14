@@ -19,7 +19,11 @@
 #include <sstream>
 
 #include "SDL3/SDL.h"
+
+#define MAGIC_ENUM_RANGE_MIN 0
+#define MAGIC_ENUM_RANGE_MAX 255
 #include "magic_enum/magic_enum.hpp"
+
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
 
@@ -59,7 +63,7 @@ namespace baz
 		REG_32 = 4	//o
 	};
 
-	enum Komut
+	enum Komut : uint16_t
 	{
 		NOP =			   0x00,	LOAD_rx_sayi =		0x01,	ADD_rx_sayi =	 0x02,	SHL_rx_sayi	  = 0x03,	CALL_regadr = 0x04, FADD_rx_sayi    = 0x06,	FCMP_rx_sayi	= 0x07,	HLT = 0xff,
 		STR_adr_sayi =     0x10,	LOAD_rx_regadr =    0x11,	ADD_rx_regadr =  0x12,	SHL_rx_ry	  = 0x13,	CALL_adr	= 0x14,	FADD_rx_regadr  = 0x16,	FCMP_rx_regadr  = 0x17,
@@ -73,12 +77,10 @@ namespace baz
 		JL  =			   0x90,								MUL_rx_regadr =  0x92,	CMP_rx_regadr = 0x93,						FMUL_rx_regadr  = 0x96,
 																MUL_rx_adr =     0xa2,  CMP_rx_adr    = 0xa3,						FMUL_rx_adr		= 0xa6,
 																MUL_rx_ry =      0xb2,  CMP_rx_ry     = 0xb3,						FMUL_rx_ry		= 0xb6,
-																DIV_rx_sayi =    0xc2,												FDIV_rx_sayi	= 0xc6,
-																DIV_rx_regadr =  0xd2,												FDIV_rx_regadr	= 0xd6,
-																DIV_rx_adr =	 0xe2,												FDIV_rx_adr		= 0xe6,
-																DIV_rx_ry =		 0xf2,												FDIV_rx_ry		= 0xf6,
-
-
+																DIV_rx_sayi =    0xc2,	SAR_rx_sayi	  = 0xc3,						FDIV_rx_sayi	= 0xc6,
+																DIV_rx_regadr =  0xd2,	SAR_rx_ry	  = 0xd3,   					FDIV_rx_regadr	= 0xd6,
+																DIV_rx_adr =	 0xe2,	SAL_rx_sayi   = 0xe3,   					FDIV_rx_adr		= 0xe6,
+																DIV_rx_ry =		 0xf2,	SAL_rx_ry	  = 0xf3,   					FDIV_rx_ry		= 0xf6,
 	};						
 
 	struct RegisterPart
@@ -111,7 +113,9 @@ namespace baz
 		//pc++ returns reguz,rega,regb
 		baz::RegisterPart getRegisterPart();
 
+		//TODO switch - case sacmaligini duzelt
 		void calculate(baz::OperationType type, uint32_t& reg, uint32_t value);
+		void calculateFloat(baz::OperationType type, uint32_t& reg, uint32_t value);
 
 		void printStack();
 

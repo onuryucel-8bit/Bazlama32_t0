@@ -1,7 +1,223 @@
-LOAD $rs0, 0x02
-ITOF $rs0
+;
+;			.B
+;		   /|
+;		  / |
+;		 /  |
+;		/   | dy
+;	   /    |
+;	  /     |
+;	 /      |
+;  A.-------.
+;	    dx
+;
+;	A(x0,y0)
+;	B(x1,y1)
+;
 
-LOAD $rs1, 0x05
-ITOF $rs1
+;------------------------;
 
-FADD $rs0, $rs1
+close_debug
+
+
+
+;(100,100) => (10,10)
+LOAD $ra0, 0x01f4
+LOAD $ra1, 0x01f4
+LOAD $ra2, 0x000a
+LOAD $ra3, 0x000a
+
+
+
+;(64,0) => (0,0)
+;LOAD $ra0, 0x0064
+;LOAD $ra1, 0x0000
+;LOAD $ra2, 0x0000
+;LOAD $ra3, 0x0000
+
+
+LOAD $ra4, 0xf00f
+                                 
+
+CALL drawLineDDA
+HLT
+
+FUNC drawLineDDA
+	
+	;r0,r1,r2,r3
+	;x0,y0,x1,y1
+	
+	;r4
+	;color
+	
+	;color   0ffff,10000,10001,10002
+	;deltax  10003,10004,10005,10006
+	;deltay  10007,10008,10009,1000a
+	;i       1000b,1000c
+	STR @0000'ffff, $ra4
+	
+	PUSH $rs0
+	PUSH $rs1
+
+		SUB $rs0, $rs2	;deltax
+		SUB $rs1, $rs3	;deltay
+		
+		;STR @deltax, $rs0
+		STR @0001'0003, $ra0
+		;STR @deltay, $rs1
+		STR @0001'0007, $ra1
+		
+		;r0 deltax
+		;r1 deltay
+		
+		;r0 => abs => r1
+		CALL abs
+		;r2 = abs(deltax)
+		MOV $rs2,$rs1
+		;LOAD $rs0, @deltay
+		LOAD $ra0, @0001'0007
+		CALL abs
+		
+		
+		;r2 abs(deltax)
+		;r1 abs(deltay)
+		
+		;HATA: CMP ITOF kontrol et reg5 icerisine sayi(0xfffff...)??? yazilmakta
+		CMP $rs2,$rs1
+		
+		JL L0
+		JMP L1
+		L0:
+			;SideLenght = deltay
+			MOV $rs5, $rs1
+			JMP L2
+		L1:
+			;SideLenght = deltax
+			MOV $rs5, $rs2
+		L2:
+		
+		;float(SideLenght)
+		ITOF $rs5
+		;LOAD $rs4, @deltax
+		LOAD $ra4, @0001'0003
+		;float(deltax)
+		ITOF $rs4
+		;incx = deltax / (float)sideLength
+		FDIV $rs4, $rs5
+		
+		;LOAD $rs3, @deltay
+		LOAD $ra3, @0001'0007
+		;float(deltay)
+		ITOF $rs3
+		;incy = deltay / (float)sideLength
+		FDIV $rs3, $rs5
+	
+	POP $rs1
+	POP $rs0
+	;r5 sideLength
+	;r4 incx
+	;r3 incY
+	;r2 color	????
+	;r1 y0 currentY
+	;r0 x0 currentX
+	
+	ITOF $rs0
+	ITOF $rs1
+	
+	;i
+	;STR @.., 0x0
+	STR @0001'000B, 0x0000'0000
+	
+	;(int)SideLength
+	FTOI $rs5 
+	drawLoop:
+		
+		;PUSH ???
+		PUSH $ro2
+			
+			;load color
+			LOAD $ra2, @0000'ffff
+			
+			;r0,r1,r2
+			;x0,y0,color
+			CALL DrawPixel
+		
+		POP $ro2
+		
+		
+		;currentX += incX
+		FADD $ro0, $ro4
+		;currentY += incY
+		FADD $ro1, $ro3
+		
+		;PUSH currentX
+		PUSH $ro0
+			;r0 = i
+			;LOAD i
+			LOAD $ra0, @0001'000B
+			; i, sideLength
+			CMP $ro0, $ro5
+			;i++
+			ADD $ra0, 0x0001
+			;STR i
+			STR @0001'000B, $ra0
+			
+		;POP currentX
+		POP $ro0
+		JL drawLoop
+	
+RET
+
+/*
+float currentX = x0;
+	float currentY = y0;
+
+	for (size_t i = 0; i <= sideLength; i++)
+	{
+		drawPixel(round(currentX), round(currentY), color);
+		currentX += incX;
+		currentY += incY;
+	}
+
+	*/
+	
+	
+FUNC abs
+	;int mask = x >> 31;
+	;return (x ^ mask) - mask
+	
+	;r0 = x
+	;r1 = mask
+	MOV $rs1, $rs0	;r1 = x
+	SAR $ro0, 0x0000'001F	;mask = x >> 31
+	XOR $ro1, $ro0	;x ^ mask
+	SUB $ro1, $ro0  ;(x ^ mask) - mask
+	
+RET
+
+FUNC DrawPixel
+	;r0 x(float)
+	;r1 y(float)
+	;r2 argb_4444
+	
+	PUSH $ro0
+	PUSH $ro1
+		;r1 = y0
+		;r0 = x0
+		
+		;round() ~~
+		FTOI $ro0
+		FTOI $ro1
+		
+		;HATA: 1 bayt kayma var
+		;x++
+		;ADD $rs0, 0x01
+		;y * width
+		MUL $ro1, 0x0000'0320
+		;y * width + x
+		ADD $ro0, $rs1
+		
+		STR @0311'5A00+r0, $ra2
+	
+	POP $ro1
+	POP $ro0
+RET

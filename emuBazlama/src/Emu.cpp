@@ -7,6 +7,7 @@ namespace baz
 	Emu::Emu(std::string path)
 	{
 		m_ram.resize(baz::MB * 50);
+		m_frameBuffer.resize(baz::MB * 2);
 		//800*600*2 => grafik karti
 		fr.readFile(path, &m_ram);
 
@@ -34,177 +35,175 @@ namespace baz
 	}
 
 	void Emu::run()
-	{				
+	{
 		while (m_ram[pc] != baz::Komut::HLT)
-		{			
-		
- 			m_komut = m_ram[pc];
-
-			if (m_komut == baz::Komut::FTOI_rx)
-			{
-				//std::cout << "!\n";
-			}
-
-			
-
-#ifdef _DEBUG			
-			auto enmKmt = magic_enum::enum_cast<baz::Komut>(m_komut);
-			if (enmKmt.has_value())
-			{								
-				spdlog::info("komut : {}", magic_enum::enum_name(*enmKmt));
-			}				
-			/*
-			std::stringstream ss;
-			ss << "DEBUG :: RET adr: " << std::hex << m_registerFile[baz::RegName::Sp];
-			spdlog::info(ss.str());
-			*/
-			//m_logger.get()->info(ss.str());
-#endif // PRODUCTION_BUILD
-
-			//CMP_rx_ry
-			//if (pc == 0x95)
-			//JL
-			//if (pc == 0xa2)
-			/*if (pc == 0x24)
-			{
-				std::cout << "debug\n";
-			}*/
-
-			
-
-		
-			switch (m_komut)
-			{
-				case baz::ADD_rx_sayi:
-				case baz::ADD_rx_regadr:
-				case baz::ADD_rx_adr:
-				case baz::ADD_rx_ry:
-				case baz::SUB_rx_sayi:
-				case baz::SUB_rx_regadr:
-				case baz::SUB_rx_adr:
-				case baz::SUB_rx_ry:
-				case baz::MUL_rx_sayi:
-				case baz::MUL_rx_regadr:
-				case baz::MUL_rx_adr:
-				case baz::MUL_rx_ry:
-				case baz::DIV_rx_sayi:
-				case baz::DIV_rx_regadr:
-				case baz::DIV_rx_adr:
-				case baz::DIV_rx_ry:
-					op_Arithmetic();
-					break;
-
-				case baz::Komut::LOAD_rx_adr:
-				case baz::Komut::LOAD_rx_adr_p_reg:
-				case baz::Komut::LOAD_rx_regadr:
-				case baz::Komut::LOAD_rx_sayi:
-					op_LOAD();
-					break;
-
-				case baz::Komut::STR_adr_p_reg_ry:
-				case baz::Komut::STR_adr_regadr:
-				case baz::Komut::STR_adr_rx:
-				case baz::Komut::STR_adr_sayi:
-					op_STR();
-					break;
-
-				case baz::Komut::MOV:
-					op_MOV();
-					break;
-
-				case baz::Komut::CALL_adr:
-				case baz::Komut::CALL_regadr:					
-					op_CALL();
-					break;
-
-				case baz::Komut::RET:
-					op_RET();
-					break;
-
-				case baz::Komut::PUSH_rx:
-					op_PUSH();
-					break;
-
-				case baz::Komut::POP_rx:
-					op_POP();
-					break;
-
-				case baz::Komut::SHL_rx_ry:
-				case baz::Komut::SHL_rx_sayi:
-				case baz::Komut::SHR_rx_ry:
-				case baz::Komut::SHR_rx_sayi:
-				case baz::Komut::SAR_rx_ry:
-				case baz::Komut::SAR_rx_sayi:
-				case baz::Komut::SAL_rx_ry:
-				case baz::Komut::SAL_rx_sayi:
-					op_Shift();
-					break;
-
-				case baz::Komut::CMP_rx_regadr:
-				case baz::Komut::CMP_rx_ry:
-				case baz::Komut::CMP_rx_sayi:
-				case baz::Komut::CMP_rx_adr:
-					op_CMP();
-					break;
-
-				case baz::Komut::JMP:
-					op_JMP();
-					break;
-
-				case baz::Komut::JNE:
-					op_JNE();
-					break;
-
-				case baz::Komut::JL:
-					op_JL();
-					break;
-
-				case baz::Komut::FTOI_rx:
-					op_FTOI();
-					break;
-
-				case baz::Komut::ITOF_rx:
-					op_ITOF();
-					break;
-
-				case baz::Komut::FADD_rx_adr:
-				case baz::Komut::FADD_rx_regadr:
-				case baz::Komut::FADD_rx_ry:
-				case baz::Komut::FADD_rx_sayi:
-				case baz::Komut::FDIV_rx_sayi:
-				case baz::Komut::FDIV_rx_regadr:
-				case baz::Komut::FDIV_rx_adr:
-				case baz::Komut::FDIV_rx_ry:
-					op_floatArithmetic();
-					break;
-
-				case baz::Komut::XOR_rx_ry:
-					op_XOR();
-					break;
-
-				case baz::Komut::OR_rx_ry:
-					op_OR();
-					break;
-
-				case baz::Komut::AND_rx_ry:
-					op_AND();
-					break;
-
-				case baz::Komut::NOT_rx:
-					op_NOT();
-					break;
-			}
-					
-  			pc++;
-		}
-
-		for (size_t i = 0; i < 8; i++)
 		{
-			std::cout << "reg" << i << " : " << std::hex << m_registerFile[i] << "\n"
-				<< "reg! + 1 : " << (~m_registerFile[i]) + 1
-				<< "\n=======================================\n";					  
+			step();
 		}
 	}
+
+	void Emu::step()
+	{
+		m_komut = m_ram[pc];
+
+		if (m_komut == baz::Komut::HLT)
+		{
+			return;
+		}
+		//if (m_komut == baz::Komut::FTOI_rx)
+		//{
+		//	//std::cout << "!\n";
+		//}
+
+#ifdef _DEBUG			
+		auto enmKmt = magic_enum::enum_cast<baz::Komut>(m_komut);
+		if (enmKmt.has_value())
+		{
+			spdlog::info("komut : {}", magic_enum::enum_name(*enmKmt));
+		}
+		/*
+		std::stringstream ss;
+		ss << "DEBUG :: RET adr: " << std::hex << m_registerFile[baz::RegName::Sp];
+		spdlog::info(ss.str());
+		*/
+		//m_logger.get()->info(ss.str());
+#endif // PRODUCTION_BUILD
+
+		//CMP_rx_ry
+		//if (pc == 0x95)
+		//JL
+		//if (pc == 0xa2)
+		/*if (pc == 0x65)
+		{
+			std::cout << "debug\n";
+		}*/
+
+		switch (m_komut)
+		{
+		case baz::ADD_rx_sayi:
+		case baz::ADD_rx_regadr:
+		case baz::ADD_rx_adr:
+		case baz::ADD_rx_ry:
+		case baz::SUB_rx_sayi:
+		case baz::SUB_rx_regadr:
+		case baz::SUB_rx_adr:
+		case baz::SUB_rx_ry:
+		case baz::MUL_rx_sayi:
+		case baz::MUL_rx_regadr:
+		case baz::MUL_rx_adr:
+		case baz::MUL_rx_ry:
+		case baz::DIV_rx_sayi:
+		case baz::DIV_rx_regadr:
+		case baz::DIV_rx_adr:
+		case baz::DIV_rx_ry:
+			op_Arithmetic();
+			break;
+
+		case baz::Komut::LOAD_rx_adr:
+		case baz::Komut::LOAD_rx_adr_p_reg:
+		case baz::Komut::LOAD_rx_regadr:
+		case baz::Komut::LOAD_rx_sayi:
+			op_LOAD();
+			break;
+
+		case baz::Komut::STR_adr_p_reg_ry:
+		case baz::Komut::STR_adr_regadr:
+		case baz::Komut::STR_adr_rx:
+		case baz::Komut::STR_adr_sayi:
+			op_STR();
+			break;
+
+		case baz::Komut::MOV:
+			op_MOV();
+			break;
+
+		case baz::Komut::CALL_adr:
+		case baz::Komut::CALL_regadr:
+			op_CALL();
+			break;
+
+		case baz::Komut::RET:
+			op_RET();
+			break;
+
+		case baz::Komut::PUSH_rx:
+			op_PUSH();
+			break;
+
+		case baz::Komut::POP_rx:
+			op_POP();
+			break;
+
+		case baz::Komut::SHL_rx_ry:
+		case baz::Komut::SHL_rx_sayi:
+		case baz::Komut::SHR_rx_ry:
+		case baz::Komut::SHR_rx_sayi:
+		case baz::Komut::SAR_rx_ry:
+		case baz::Komut::SAR_rx_sayi:
+		case baz::Komut::SAL_rx_ry:
+		case baz::Komut::SAL_rx_sayi:
+			op_Shift();
+			break;
+
+		case baz::Komut::CMP_rx_regadr:
+		case baz::Komut::CMP_rx_ry:
+		case baz::Komut::CMP_rx_sayi:
+		case baz::Komut::CMP_rx_adr:
+			op_CMP();
+			break;
+
+		case baz::Komut::JMP:
+			op_JMP();
+			break;
+
+		case baz::Komut::JNE:
+			op_JNE();
+			break;
+
+		case baz::Komut::JL:
+			op_JL();
+			break;
+
+		case baz::Komut::FTOI_rx:
+			op_FTOI();
+			break;
+
+		case baz::Komut::ITOF_rx:
+			op_ITOF();
+			break;
+
+		case baz::Komut::FADD_rx_adr:
+		case baz::Komut::FADD_rx_regadr:
+		case baz::Komut::FADD_rx_ry:
+		case baz::Komut::FADD_rx_sayi:
+		case baz::Komut::FDIV_rx_sayi:
+		case baz::Komut::FDIV_rx_regadr:
+		case baz::Komut::FDIV_rx_adr:
+		case baz::Komut::FDIV_rx_ry:
+			op_floatArithmetic();
+			break;
+
+		case baz::Komut::XOR_rx_ry:
+			op_XOR();
+			break;
+
+		case baz::Komut::OR_rx_ry:
+			op_OR();
+			break;
+
+		case baz::Komut::AND_rx_ry:
+			op_AND();
+			break;
+
+		case baz::Komut::NOT_rx:
+			op_NOT();
+			break;
+		}
+
+		pc++;
+	
+	}
+	
 	
 	void Emu::op_LOAD()
 	{		
@@ -403,6 +402,7 @@ namespace baz
 			m_registerFile[regPart.m_rega] += m_ram[value];
 			break;
 
+			//TODO $r(s,a,o)
 			//add rx,ry
 		case baz::Komut::ADD_rx_ry:
 		case baz::Komut::SUB_rx_ry:
@@ -742,13 +742,22 @@ namespace baz
 		//TODO SAR_rx_sayi bit
 		case baz::Komut::SAR_rx_sayi:
 		{
-			uint32_t bit = m_registerFile[regPart.m_rega] & 0x8000'0000;
+			/*value = getBytes(regPart.m_reguz);
 
-			value = getBytes(regPart.m_reguz);
+			uint32_t mask = 0x8000'0000;
+			uint32_t buffer = 0;
 
+			char i = 0;
+			while (i < value) 
+			{
+				buffer |= (m_registerFile[regPart.m_rega] & mask);
+				mask >>= 1;
+				i++;
+			}
+			
 			m_registerFile[regPart.m_rega] >>= value;
 
-			m_registerFile[regPart.m_rega] |= bit;
+			m_registerFile[regPart.m_rega] |= buffer;*/
 
 			break;
 		}
@@ -940,7 +949,7 @@ namespace baz
 
 	//============================================================================================================//
 	//============================================================================================================//
-	//============================================================================================================//
+	//============================================================================================================//	
 
 	baz::RegisterPart Emu::getRegisterPart()
 	{
@@ -1008,12 +1017,26 @@ namespace baz
 			break;
 		}
 		
+		bool loadPixelData = false;
+		if (adr >= FrameBufferAdr)
+		{
+			adr -= FrameBufferAdr;
+			loadPixelData = true;
+		}
 
 		for (; i >= 0; i--)
 		{
 			uint32_t mask = 0xff00'0000 >> ((3 - i) * 8);
 
-			m_ram[adr] = (data & mask) >> 8 * i;
+			if (loadPixelData == false)
+			{
+				m_ram[adr] = (data & mask) >> 8 * i;
+			}
+			else
+			{
+				m_frameBuffer[adr] = (data & mask) >> 8 * i;
+			}
+
 
 			//std::cout << std::hex << ((data & mask) >> 8 * i) << "\n";
 			//std::cout << adr << "|" << (int)m_ram[adr] << "\n";

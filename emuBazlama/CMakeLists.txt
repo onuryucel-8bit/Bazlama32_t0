@@ -29,6 +29,8 @@ message(STATUS "=========MESSAGE !!LIBS HERE!!===========: ${LIBS_LOCAL_DIR}")
 #=====================================================================#
 add_subdirectory(${LIBS_LOCAL_DIR}/SDL3 SDL_build)
 add_subdirectory(${LIBS_LOCAL_DIR}/spdlog spdlog_build)
+add_subdirectory(${LIBS_LOCAL_DIR}/imgui-docking imgui_build)
+
 #=====================================================================#
 #=====================================================================#
 
@@ -39,20 +41,29 @@ add_executable(${PROJECT_NAME}  ${MY_SOURCES})
 
 #====================LIBS=============================================#
 #=====================================================================#
+
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ${LIBS_LOCAL_DIR}
+    ${LIBS_LOCAL_DIR}/imgui-docking/imgui
+    ${LIBS_LOCAL_DIR}/imgui-docking/imgui/backends
+)
+
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
     SDL3::SDL3
     spdlog::spdlog
+    imgui
 )
 #=====================================================================#
 #=====================================================================#
 
 # This is useful to get an ASSETS_PATH in your IDE during development but you should comment this if you compile a release version and uncomment the next line
-target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC cmake_PROJECT_TESTS="${CMAKE_CURRENT_SOURCE_DIR}/tests/")
+target_compile_definitions(${PROJECT_NAME} PUBLIC cmake_PROJECT_TESTS="${CMAKE_CURRENT_SOURCE_DIR}/tests/")
 
-target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC cmake_PROJECT_OUTPUT="${CMAKE_CURRENT_SOURCE_DIR}/output/")
+target_compile_definitions(${PROJECT_NAME} PUBLIC cmake_PROJECT_OUTPUT="${CMAKE_CURRENT_SOURCE_DIR}/output/")
 
-target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC cmake_PROJECT_LOGS="${CMAKE_CURRENT_SOURCE_DIR}/logs/")
+target_compile_definitions(${PROJECT_NAME} PUBLIC cmake_PROJECT_LOGS="${CMAKE_CURRENT_SOURCE_DIR}/logs/")
 
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE
@@ -66,10 +77,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 if(PRODUCTION_BUILD)
 	# setup the ASSETS_PATH macro to be in the root folder of your exe
-	target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC cmake_PROJECT_TESTS="./tests/") 
+	target_compile_definitions(${PROJECT_NAME} PUBLIC cmake_PROJECT_TESTS="./tests/") 
 
 	# remove the option to debug asserts.
-	target_compile_definitions(${CMAKE_PROJECT_NAME} PUBLIC PRODUCTION_BUILD=1) 
+	target_compile_definitions(${PROJECT_NAME} PUBLIC PRODUCTION_BUILD=1) 
 
 
 endif()

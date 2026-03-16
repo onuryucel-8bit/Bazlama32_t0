@@ -28,12 +28,16 @@
 #include "spdlog/sinks/basic_file_sink.h"
 
 #include "FileReader.h"
+#include "utils/Radix.h"
 
 namespace baz
 {
+
+	
 	constexpr size_t KB = 1024;
 	constexpr size_t MB = 1024 * KB;
-	constexpr size_t GB = 1024 * MB;	
+	constexpr size_t GB = 1024 * MB;
+	constexpr size_t FrameBufferAdr = 0x311'5a00;
 
 	enum FlagReg
 	{
@@ -97,18 +101,27 @@ namespace baz
 		~Emu();
 
 		void run();
-		std::vector<uint8_t> m_ram;
+		void step();
+		
 		uint32_t getBytes(uint8_t uz, uint32_t adr);
 		
+		std::vector<uint8_t> m_ram;
+		std::vector<uint8_t> m_frameBuffer;
+				
+		uint32_t pc = 0;
+		uint32_t m_registerFile[8] = {};
+
 	private:		
 
 		std::shared_ptr<spdlog::logger> m_logger;
 		baz::FileReader fr;
 								
-		uint32_t pc = 0;
-		uint32_t m_registerFile[8] = {};
+		
 		uint8_t m_komut;
-				
+		
+
+		void strPixel(uint32_t adr, uint8_t value);
+		uint8_t loadPixel(uint32_t adr);
 
 		//pc++ returns reguz,rega,regb
 		baz::RegisterPart getRegisterPart();

@@ -22,7 +22,7 @@ close_debug
 
 ;(100,100) => (10,10)
 LOAD $ra0, 0x01f4
-LOAD $ra1, 0x01f4
+LOAD $ra1, 0x0120
 LOAD $ra2, 0x000a
 LOAD $ra3, 0x000a
 
@@ -80,8 +80,21 @@ FUNC drawLineDDA
 		
 		;r2 abs(deltax)
 		;r1 abs(deltay)
+		;		
+		;	if |deltaX| >= |deltaY|
+		;		sideLength = |deltaX|
+		;
+		;	else
+		;		sideLength = |deltaY|		
+		;
+		;int sideLength = abs(deltaX) >= abs(deltaY) ? abs(deltaX) : abs(deltaY);
+		;
+		;if (r2 > r1)
+		;  r5 = r2
+		;
+		;else
+		;  r5 = r1
 		
-		;HATA: CMP ITOF kontrol et reg5 icerisine sayi(0xfffff...)??? yazilmakta
 		CMP $rs2,$rs1
 		
 		JL L0
@@ -180,7 +193,30 @@ float currentX = x0;
 
 	*/
 	
+FUNC abs
+	;r0 = x 
+	;r1 = abs(x)
 	
+	;if(r0 > 0)
+	;	return x
+	;else
+	;	x = x * -1
+	;	return x
+	CMP $ro0, 0x0000'0000
+	JL absL0
+	JMP absL1
+	
+	absL0:
+		;x = x * -1
+		MUL $ro0, 0xffff'ffff		
+	absL1:
+	
+	;r1 = abs(x)
+	MOV $ro1,$ro0
+	
+RET
+/*
+
 FUNC abs
 	;int mask = x >> 31;
 	;return (x ^ mask) - mask
@@ -193,6 +229,8 @@ FUNC abs
 	SUB $ro1, $ro0  ;(x ^ mask) - mask
 	
 RET
+
+*/
 
 FUNC DrawPixel
 	;r0 x(float)

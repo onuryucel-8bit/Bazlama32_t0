@@ -22,7 +22,8 @@
 
 #define MAGIC_ENUM_RANGE_MIN 0
 #define MAGIC_ENUM_RANGE_MAX 255
-#include "magic_enum/magic_enum.hpp"
+#include "utils/magic_enum/magic_enum.hpp"
+
 
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/basic_file_sink.h"
@@ -120,8 +121,8 @@ namespace baz
 		uint8_t m_komut;
 		
 
-		void strPixel(uint32_t adr, uint8_t value);
-		uint8_t loadPixel(uint32_t adr);
+		//void strPixel(uint32_t adr, uint8_t value);
+		//uint8_t loadPixel(uint32_t adr);
 
 		//pc++ returns reguz,rega,regb
 		baz::RegisterPart getRegisterPart();

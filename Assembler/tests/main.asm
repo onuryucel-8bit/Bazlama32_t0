@@ -21,9 +21,9 @@ close_debug
 
 
 ;(100,100) => (10,10)
-LOAD $ra0, 0x01f4
-LOAD $ra1, 0x0120
-LOAD $ra2, 0x000a
+LOAD $ra0, 0x000a
+LOAD $ra1, 0x0000
+LOAD $ra2, 0x0064
 LOAD $ra3, 0x000a
 
 

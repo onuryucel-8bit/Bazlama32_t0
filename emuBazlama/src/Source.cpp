@@ -1,73 +1,17 @@
 #include "pch.h"
 
-#include "Emu.h"
+#include <bitset>
 
 #include "imgui-docking/imgui/imgui.h"
 #include "imgui-docking/imgui/backends/imgui_impl_sdl3.h"
 #include "imgui-docking/imgui/backends/imgui_impl_sdlrenderer3.h"
-#include <bitset>
-
-
-//uint32_t decToIEEE754_32(float decf)
-//{
-//	uint32_t result;
-//	std::memcpy(&result, &decf, sizeof(result));
-//	return result;
-//}
-//
-//uint32_t decToIEEE754_32(std::string decf)
-//{
-//	uint32_t result;
-//
-//	float value = std::stof(decf);
-//
-//	std::memcpy(&result, &value, sizeof(result));
-//	return result;
-//}
-
-//uint32_t decToIEEE754_32(std::string dec)
-//{
-//	size_t dotPos = dec.find('.');
-//
-//	std::string valbin = rdx::decToBin(std::stoi(dec.substr(0, dotPos)));
-//
-//	std::cout << "valbin " << valbin << "\n";
-//
-//	float fractPart = std::stof(dec.substr(dotPos, dec.size()));
-//
-//	std::string fractStr = "";
-//	for (int i = 0; i < 22 - dec.substr(dotPos, dec.size()).size(); i++)
-//	{
-//		fractPart *= 2;
-//
-//		if (fractPart >= 1.0f)
-//		{
-//			fractStr += "1";
-//			fractPart = fractPart - 1.0f;
-//		}
-//		else
-//		{
-//			fractStr += "0";
-//		}		
-//	}	
-//
-//	std::string result_FractPart = valbin + "." + fractStr;
-//	std::string mantissa = valbin.substr(1, valbin.size()) + fractStr;
-//
-//	dotPos = result_FractPart.find('.');	
-//
-//	std::string exponent = rdx::decToBin(dotPos - 1 + 127);
-//
-//	std::cout << "result " << exponent << " " << result_FractPart << "\n";
-//	
-//
-//	std::cout << "0" << exponent << mantissa << "\n";
-//
-//	return 0;
-//}
 
 #include "SDL3/SDL.h"
+//#include "tiny-process/process.hpp"
 #include "utils/Radix.h"
+
+#include "Emu.h"
+
 
 baz::Emu emu(cmake_PROJECT_TESTS "emuHex.txt");
 SDL_Window* window;
@@ -106,7 +50,7 @@ uint16_t getBytes_t0(uint8_t uz, uint32_t adr)
 	return retval;
 }
 
-void renderImgui() 
+void drawImgui() 
 {
 	ImGui_ImplSDLRenderer3_NewFrame();
 	ImGui_ImplSDL3_NewFrame();
@@ -174,6 +118,7 @@ void renderImgui()
 	//--------------------------------------------------//
 
 	bool pressedStep = ImGui::Button("Step");
+	ImGui::SameLine();
 	bool pressedRun = ImGui::Button("Run");
 
 	if (pressedStep || (ImGui::IsItemHovered() && ImGui::IsKeyPressed(ImGuiKey_Space)))
@@ -184,6 +129,16 @@ void renderImgui()
 	if (pressedRun)
 	{
 		f_runEmu = !f_runEmu;
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("RunAssembler"))
+	{
+		
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("LoadProgram"))
+	{
+
 	}
 
 	//--------------------------------------------------//
@@ -265,7 +220,13 @@ void processEvent()
 
 int main()
 {
-		
+	/*TinyProcessLib::Process process(
+		cmake_ASSEMBLER_PATH "Assembler.exe",
+		""		
+	);*/
+
+	//int exitCode = process.get_exit_status();
+
 	initSDL();
 	
 	initImgui();
@@ -290,7 +251,7 @@ int main()
 
 		SDL_RenderClear(renderer);
 
-		renderImgui();
+		drawImgui();
 
 		draw();
 

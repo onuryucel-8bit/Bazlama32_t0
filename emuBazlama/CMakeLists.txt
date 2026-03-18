@@ -14,6 +14,7 @@ set(SPDLOG_BUILD_EXAMPLE OFF)
 set(SPDLOG_BUILD_TESTS OFF)
 set(SPDLOG_BUILD_BENCH OFF)
 
+
 #! ! ! ! ! ! !
 #set this to ON instead of OFF to ship the game!
 #basically this will change the RESOURCES_PATH to be the local path
@@ -22,14 +23,20 @@ set(SPDLOG_BUILD_BENCH OFF)
 set(PRODUCTION_BUILD ON CACHE BOOL "Make this a production build" FORCE)
 
 
+
+
+
 project(${PROJECT_NAME} VERSION 0.1 LANGUAGES CXX)
 
 message(STATUS "=========MESSAGE !!LIBS HERE!!===========: ${LIBS_LOCAL_DIR}")
 #====================LIBS=============================================#
 #=====================================================================#
+
 add_subdirectory(${LIBS_LOCAL_DIR}/SDL3 SDL_build)
 add_subdirectory(${LIBS_LOCAL_DIR}/spdlog spdlog_build)
 add_subdirectory(${LIBS_LOCAL_DIR}/imgui-docking imgui_build)
+add_subdirectory(${LIBS_LOCAL_DIR}/tiny-process tiny_process_build)
+
 
 #=====================================================================#
 #=====================================================================#
@@ -42,22 +49,19 @@ add_executable(${PROJECT_NAME}  ${MY_SOURCES})
 #====================LIBS=============================================#
 #=====================================================================#
 
-
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${LIBS_LOCAL_DIR}
-    ${LIBS_LOCAL_DIR}/imgui-docking/imgui
-    ${LIBS_LOCAL_DIR}/imgui-docking/imgui/backends
-)
+target_include_directories(${PROJECT_NAME} PRIVATE ${LIBS_LOCAL_DIR})
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
     SDL3::SDL3
     spdlog::spdlog
     imgui
+    tiny-process-library
 )
 #=====================================================================#
 #=====================================================================#
 
+# PATHS
 # This is useful to get an ASSETS_PATH in your IDE during development but you should comment this if you compile a release version and uncomment the next line
 target_compile_definitions(${PROJECT_NAME} PUBLIC cmake_PROJECT_TESTS="${CMAKE_CURRENT_SOURCE_DIR}/tests/")
 
@@ -65,14 +69,16 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC cmake_PROJECT_OUTPUT="${CMAKE_
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC cmake_PROJECT_LOGS="${CMAKE_CURRENT_SOURCE_DIR}/logs/")
 
+#=====================================================================#
+#=====================================================================#
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+    cmake_ASSEMBLER_PATH=$<$<CONFIG:Debug>:"${CMAKE_CURRENT_SOURCE_DIR}/Assembler/out/build/x64-Debug">
+    cmake_ASSEMBLER_PATH=$<$<CONFIG:Release>:"${CMAKE_CURRENT_SOURCE_DIR}/Assembler/out/build/x64-Release">
+)
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE
     ${SRC_DIR}/pch.h
-)
-
-# include directories so headers can be found
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${LIBS_LOCAL_DIR}
 )
 
 if(PRODUCTION_BUILD)
@@ -81,9 +87,8 @@ if(PRODUCTION_BUILD)
 
 	# remove the option to debug asserts.
 	target_compile_definitions(${PROJECT_NAME} PUBLIC PRODUCTION_BUILD=1) 
-
-
 endif()
+
 
 if(MSVC)
     set_target_properties(${PROJECT_NAME} PROPERTIES

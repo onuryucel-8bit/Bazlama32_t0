@@ -436,7 +436,9 @@ int main()
 		copyRegisterFile[i] = emu.m_registerFile[i];
 	}
 	
-	//ddaLineAlgo(0, 0, 100, 100, 0xffff);
+	//ddaLineAlgo(100, 500, 400, 100, 0xffff);
+	//ddaLineAlgo(400, 100, 700, 500, 0xffff);
+	//ddaLineAlgo(700, 500, 100, 500, 0xffff);
 	
 	
 
@@ -462,12 +464,12 @@ int main()
 			{
 				colorBuffer[i] = 0xf0f0;
 			}*/
-
+			
 			for (size_t i = 0; i < emuWindowWidth * emuWindowHeight; i++)
 			{
-				colorBuffer[i] = (emu.m_frameBuffer[i] << 8) | emu.m_frameBuffer[i + 1];
+				colorBuffer[i] = emu.m_frameBuffer[i];
 			}
-
+			
 			//for (size_t i = 0; i < emuWindowWidth * emuWindowHeight; i++)
 			//{
 			//	//colorBuffer[i] = getBytes_t0(baz::UzTip::REG_16, 0 + (i * 2));

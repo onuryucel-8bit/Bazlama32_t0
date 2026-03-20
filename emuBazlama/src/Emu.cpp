@@ -73,7 +73,7 @@ namespace baz
 		//if (pc == 0x95)
 		//JL
 		//if (pc == 0xa2)
-		if (pc == 0xee)
+		if (pc == 0xce && TEST_counter == 2)
 		{
  			std::cout << "debug\n";
 		}
@@ -482,18 +482,18 @@ namespace baz
 
 				storeBytesToRam(m_registerFile[regPart.m_rega], adr, regPart.m_reguz);
 
-				for (size_t i = 0; i < 4; i++)
+				/*for (size_t i = 0; i < 4; i++)
 				{
 					std::cout << "STR_adr_rx" << "\n"
 						<< std::hex << adr + i << "|" << (int)m_ram[adr + i] << "\n";
-				}
+				}*/
 				break;
 
 			case baz::Komut::STR_adr_p_reg_ry:
 			{
 				adr = getBytes(baz::UzTip::REG_32);
 
- 				uint32_t dest = adr + m_registerFile[regPart.m_rega];				
+ 				uint32_t dest = adr + m_registerFile[regPart.m_rega];								
 
 				storeBytesToRam(m_registerFile[regPart.m_regb], dest , regPart.m_reguz);
 
@@ -874,24 +874,17 @@ namespace baz
 	{
 		baz::RegisterPart regPart = getRegisterPart();
 
-		float test = std::bit_cast<float>(m_registerFile[regPart.m_rega]);
+		float fval = std::bit_cast<float>(m_registerFile[regPart.m_rega]);
 
-		float intPart, dlt;
-
-		dlt = std::modf(test, &intPart);
-
-		int intPARRT = (int)intPart;
-		
-
-		uint32_t rx = rdx::IEEE754_toInt(m_registerFile[regPart.m_rega]);
+		int value = (int)std::round(fval);
 								
-		m_registerFile[regPart.m_rega] = rx;
+		m_registerFile[regPart.m_rega] = (uint32_t)value;
 	}
 
 	void Emu::op_ITOF()
 	{		
 		baz::RegisterPart regPart = getRegisterPart();
-
+		
 		float rx = (float)(int32_t)(m_registerFile[regPart.m_rega]);
 
 		m_registerFile[regPart.m_rega] = rdx::decToIEEE754_32(rx);
@@ -1037,6 +1030,7 @@ namespace baz
 	{
 		int i = 0;
 
+		//TODO use magic enum enum => int
 		switch (uz)
 		{
 		case baz::UzTip::REG_32:
@@ -1052,7 +1046,7 @@ namespace baz
 			break;
 		}
 		
-		bool loadPixelData = false;
+		
 		if (adr >= FrameBufferAdr)
 		{
 			adr -= FrameBufferAdr;
@@ -1065,33 +1059,27 @@ namespace baz
 			//std::cout << std::hex << "address:" << adr << "\n";
 			TEST_counter++;
 
-			if (adr == 0x321)
+			if (TEST_counter == 2)
 			{
 				std::cout << "...Ne lan bu\n";
 			}
 
-			loadPixelData = true;
+			m_frameBuffer[adr] = data & 0xffff;
 		}
-
-		for (; i >= 0; i--)
+		else
 		{
-			uint32_t mask = 0xff00'0000 >> ((3 - i) * 8);
-
-			if (loadPixelData == false)
+			for (; i >= 0; i--)
 			{
+				uint32_t mask = 0xff00'0000 >> ((3 - i) * 8);
+
 				m_ram[adr] = (data & mask) >> 8 * i;
-			}
-			else
-			{
-				m_frameBuffer[adr] = (data & mask) >> 8 * i;
-			}
 
+				//std::cout << std::hex << "RAM:" << ((data & mask) >> 8 * i) << "\n";
+				//std::cout << "RAM:" << adr << "|" << (int)m_ram[adr] << "\n";
 
-			//std::cout << std::hex << "RAM:" << ((data & mask) >> 8 * i) << "\n";
-			//std::cout << "RAM:" << adr << "|" << (int)m_ram[adr] << "\n";
-			
-			adr++;			
-		}
+				adr++;
+			}
+		}				
 	}
 
 	void Emu::storeBytesToStack(uint32_t data, baz::UzTip uz)

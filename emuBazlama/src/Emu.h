@@ -102,7 +102,7 @@ namespace baz
 		~Emu();
 					
 		std::vector<uint8_t> m_ram;
-		std::vector<uint8_t> m_frameBuffer;
+		std::vector<uint16_t> m_frameBuffer;
 
 		uint32_t pc = 0;
 		uint32_t m_registerFile[8] = {};

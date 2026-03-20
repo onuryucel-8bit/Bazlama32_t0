@@ -31,30 +31,42 @@ close_debug
 ;LOAD $ra1, 0x000a
 ;LOAD $ra2, 0xffff
 
+;LOAD $ra0, 0x0000	;x0
+;LOAD $ra1, 0x0000	;y0
+;LOAD $ra2, 0x01f4	;x1
+;LOAD $ra3, 0x01f4	;y1
+;LOAD $ra4, 0xffff	;renk
+
+;CALL drawLineDDA
 
 ;(100,500) => (400,100)
-LOAD $ra0, 0x0064	;x0
-LOAD $ra1, 0x01f4	;y0
-LOAD $ra2, 0x0190	;x1
-LOAD $ra3, 0x0064	;y1
+LOAD $ra0, 0x000a	;x0
+LOAD $ra1, 0x000a	;y0
+
+LOAD $ra2, 0x0100	;x1
+LOAD $ra3, 0x0100	;y1
 LOAD $ra4, 0xffff	;renk
 
 CALL drawLineDDA
+
 
 ;(400,100) => (700,500)
-LOAD $ra0, 0x0190	;x0
-LOAD $ra1, 0x0064	;y0
-LOAD $ra2, 0x02bc	;x1
-LOAD $ra3, 0x01f4	;y1
+LOAD $ra0, 0x0100	;x0
+LOAD $ra1, 0x0100	;y0
+
+LOAD $ra2, 0x000a	;x1
+LOAD $ra3, 0x0150	;y1
 LOAD $ra4, 0xffff	;renk
 
 CALL drawLineDDA
 
+
 ;(700,500) => (100,500)
-LOAD $ra2, 0x02bc	;x0
-LOAD $ra3, 0x01f4	;y0
-LOAD $ra0, 0x0064	;x1
-LOAD $ra1, 0x01f4	;y1
+LOAD $ra0, 0x000a	;x0
+LOAD $ra1, 0x000a	;y0
+
+LOAD $ra2, 0x000a	;x1
+LOAD $ra3, 0x0100	;y1
 LOAD $ra4, 0xffff	;renk
 
 CALL drawLineDDA

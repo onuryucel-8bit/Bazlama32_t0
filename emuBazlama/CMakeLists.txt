@@ -49,7 +49,9 @@ add_executable(${PROJECT_NAME}  ${MY_SOURCES})
 #====================LIBS=============================================#
 #=====================================================================#
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${LIBS_LOCAL_DIR})
+target_include_directories(${PROJECT_NAME} PRIVATE 
+    ${LIBS_LOCAL_DIR}
+)
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
@@ -69,13 +71,26 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC cmake_PROJECT_OUTPUT="${CMAKE_
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC cmake_PROJECT_LOGS="${CMAKE_CURRENT_SOURCE_DIR}/logs/")
 
+get_filename_component(ASM_DEBUG
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Assembler/out/build/x64-Debug"
+    ABSOLUTE
+)
+
+#TODO RELEASE ASSEMBLER
+get_filename_component(ASM_RELEASE
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Assembler/out/build/x64-Debug"
+    ABSOLUTE
+)
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC
+    cmake_ASSEMBLER_PATH=$<$<CONFIG:Debug>:"${ASM_DEBUG}/">
+    cmake_ASSEMBLER_PATH=$<$<CONFIG:Release>:"${ASM_RELEASE}/">
+)
+
 #=====================================================================#
 #=====================================================================#
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC
-    cmake_ASSEMBLER_PATH=$<$<CONFIG:Debug>:"${CMAKE_CURRENT_SOURCE_DIR}/Assembler/out/build/x64-Debug">
-    cmake_ASSEMBLER_PATH=$<$<CONFIG:Release>:"${CMAKE_CURRENT_SOURCE_DIR}/Assembler/out/build/x64-Release">
-)
+
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE
     ${SRC_DIR}/pch.h
@@ -95,5 +110,6 @@ if(MSVC)
         VS_DEBUGGER_WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
 endif()
+
 
 

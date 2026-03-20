@@ -7,7 +7,9 @@ namespace baz
 {
 	FileReader::FileReader()
 	{
-		
+		m_ram = nullptr;
+		m_currentChar = 0;
+		m_position = -1;
 	}
 
 	FileReader::~FileReader()
@@ -31,6 +33,9 @@ namespace baz
 		ss << file.rdbuf();
 
 		source = ss.str();
+
+		m_currentChar = 0;
+		m_position = -1;
 
 		placeFiletoRAM();
 	}

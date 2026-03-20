@@ -392,6 +392,12 @@ void Parser::checkTables()
 
 								memlay.m_opcode = entry[i].m_opcode;
 
+
+								if (entry[i].m_opcode == dasm::JMP && entry[i].m_ramIndex == 0x106)
+								{
+									std::cout << "TEST ??\n";
+								}
+
 								memlay.m_packetSize = asmc_WORD;
 								memlay.m_packet = new uint8_t[asmc_WORD];
 								memlay.m_ramIndex = entry[i].m_ramIndex;
@@ -400,7 +406,9 @@ void Parser::checkTables()
 								uint32_t funcAdr = m_symbolTable[symKey].m_ramIndex;
 								for (int i = 3; i >= 0; i--)
 								{
-									memlay.m_packet[i] = funcAdr & (0xff << (8 * (i - 3)));
+									uint32_t value = funcAdr & (0xff << (8 * (3 - i)));
+
+									memlay.m_packet[i] = value >> (8 * (3 - i));
 								}
 
 								m_output.push_back(memlay);
@@ -1694,7 +1702,9 @@ void Parser::parseCALL()
 			uint32_t funcAdr = m_symbolTable[m_currentToken].m_ramIndex;
 			for (int i = 3; i >= 0; i--)
 			{
-				memlay.m_packet[i] = funcAdr & (0xff << (8 * (i - 3)));
+				uint32_t value = funcAdr & (0xff << (8 * (3 - i)));
+
+				memlay.m_packet[i] = value >> (8 * (3 - i));
 			}
 
 			m_output.push_back(memlay);
@@ -1789,7 +1799,9 @@ void Parser::parseFUNC()
 				uint32_t funcAdr = m_ramLocation;
 				for (int i = 3; i >= 0; i--)
 				{
-					memlay.m_packet[i] = funcAdr & (0xff << (8 * (i - 3)));
+					uint32_t value = funcAdr & (0xff << (8 * (3 - i)));
+
+					memlay.m_packet[i] = value >> (8 * (3 - i));
 				}
 
 				m_output.push_back(memlay);
@@ -1900,8 +1912,7 @@ void Parser::parseJMP()
 
 		MemoryLayout memlay;
 
-		memlay.m_opcode = opcode;
-		memlay.m_packetSize = 2;
+		memlay.m_opcode = opcode;	
 		memlay.m_ramIndex = m_ramLocation;
 		m_ramLocation++;
 
@@ -1916,7 +1927,9 @@ void Parser::parseJMP()
 		uint32_t funcAdr = m_symbolTable[m_currentToken].m_ramIndex;
 		for (int i = 3; i >= 0; i--)
 		{
-			memlay.m_packet[i] = funcAdr & (0xff << (8 * (i - 3)));
+			uint32_t value = funcAdr & (0xff << (8 * (3 - i)));
+
+			memlay.m_packet[i] = value >> (8 * (3 - i));
 		}
 
 		m_output.push_back(memlay);

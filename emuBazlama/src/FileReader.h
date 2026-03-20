@@ -13,10 +13,10 @@ namespace baz
 		FileReader();
 		~FileReader();
 		
-		void placeFiletoRAM();
 		void readFile(std::string path, std::vector<uint8_t>* ram);
 
 	private:
+		void placeFiletoRAM();
 		void nextChar();
 		std::string getNextLine();
 
@@ -24,6 +24,6 @@ namespace baz
 
 		std::string source;
 		char m_currentChar;
-		int m_position = -1;
+		int m_position;
 	};
 }

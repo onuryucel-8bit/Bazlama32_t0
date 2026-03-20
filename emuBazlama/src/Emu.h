@@ -100,27 +100,32 @@ namespace baz
 	public:
 		Emu(std::string path);
 		~Emu();
+					
+		std::vector<uint8_t> m_ram;
+		std::vector<uint8_t> m_frameBuffer;
+
+		uint32_t pc = 0;
+		uint32_t m_registerFile[8] = {};
+		uint8_t m_komut;
+
+		uint32_t getBytes(uint8_t uz, uint32_t adr);
+
+		void restart();
+		void loadProgram();
 
 		void run();
 		void step();
-		
-		uint32_t getBytes(uint8_t uz, uint32_t adr);
-		
-		std::vector<uint8_t> m_ram;
-		std::vector<uint8_t> m_frameBuffer;
-				
-		uint32_t pc = 0;
-		uint32_t m_registerFile[8] = {};
 
+		baz::RegisterPart getRegisterPart(uint32_t adr);
+
+		int TEST_counter = 0;
+		
 	private:		
 
 		std::shared_ptr<spdlog::logger> m_logger;
 		baz::FileReader fr;
-								
+										
 		
-		uint8_t m_komut;
-		
-
 		//void strPixel(uint32_t adr, uint8_t value);
 		//uint8_t loadPixel(uint32_t adr);
 

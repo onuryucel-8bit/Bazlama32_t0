@@ -21,24 +21,45 @@ close_debug
 
 
 ;(100,100) => (10,10)
-LOAD $ra0, 0x000a
-LOAD $ra1, 0x0000
-LOAD $ra2, 0x0064
-LOAD $ra3, 0x000a
-
-
-
-;(64,0) => (0,0)
-;LOAD $ra0, 0x0064
-;LOAD $ra1, 0x0000
+;LOAD $ra0, 0x01f4
+;LOAD $ra1, 0x01f3
 ;LOAD $ra2, 0x0000
 ;LOAD $ra3, 0x0000
 
 
-LOAD $ra4, 0xf00f
-                                 
+;LOAD $ra0, 0x0000
+;LOAD $ra1, 0x000a
+;LOAD $ra2, 0xffff
+
+
+;(100,500) => (400,100)
+LOAD $ra0, 0x0064	;x0
+LOAD $ra1, 0x01f4	;y0
+LOAD $ra2, 0x0190	;x1
+LOAD $ra3, 0x0064	;y1
+LOAD $ra4, 0xffff	;renk
 
 CALL drawLineDDA
+
+;(400,100) => (700,500)
+LOAD $ra0, 0x0190	;x0
+LOAD $ra1, 0x0064	;y0
+LOAD $ra2, 0x02bc	;x1
+LOAD $ra3, 0x01f4	;y1
+LOAD $ra4, 0xffff	;renk
+
+CALL drawLineDDA
+
+;(700,500) => (100,500)
+LOAD $ra2, 0x02bc	;x0
+LOAD $ra3, 0x01f4	;y0
+LOAD $ra0, 0x0064	;x1
+LOAD $ra1, 0x01f4	;y1
+LOAD $ra4, 0xffff	;renk
+
+CALL drawLineDDA
+
+
 HLT
 
 FUNC drawLineDDA
@@ -49,89 +70,116 @@ FUNC drawLineDDA
 	;r4
 	;color
 	
-	;color   0ffff,10000,10001,10002
-	;deltax  10003,10004,10005,10006
-	;deltay  10007,10008,10009,1000a
-	;i       1000b,1000c
+	;color    0'ffff,!10000,10001,10002
+	;deltax   1'0003,10004,10005,10006
+	;deltay   1'0007,10008,10009,1000a
+	;i        1'000b,1000c,1000d,1000e
+	;x0		  1'000f,10010,10011,10012
+	;y0		  1'0013,10014,10015,10016
+	
+	
+	;color
 	STR @0000'ffff, $ra4
-	
-	PUSH $rs0
-	PUSH $rs1
+	;x0
+	STR @0001'000f, $ro0
+	;y0
+	STR @0001'0013, $ro1
+		
+	;x1-x0
+	SUB $rs2, $rs0	;deltax
+	;y1-y0
+	SUB $rs3, $rs1	;deltay
 
-		SUB $rs0, $rs2	;deltax
-		SUB $rs1, $rs3	;deltay
+	;STR @deltax, $rs0
+	STR @0001'0003, $ro2
+	;STR @deltay, $rs1
+	STR @0001'0007, $ro3
 		
-		;STR @deltax, $rs0
-		STR @0001'0003, $ra0
-		;STR @deltay, $rs1
-		STR @0001'0007, $ra1
+	;r0 deltax
+	MOV $ra0, $ra2
 		
-		;r0 deltax
-		;r1 deltay
-		
-		;r0 => abs => r1
-		CALL abs
-		;r2 = abs(deltax)
-		MOV $rs2,$rs1
-		;LOAD $rs0, @deltay
-		LOAD $ra0, @0001'0007
-		CALL abs
+	;r0 => abs => r1
+	CALL abs
+	;r2 = abs(deltax)
+	MOV $rs2,$rs1
+	;LOAD $rs0, @deltay
+	LOAD $ro0, @0001'0007
+	CALL abs
 		
 		
-		;r2 abs(deltax)
-		;r1 abs(deltay)
-		;		
-		;	if |deltaX| >= |deltaY|
-		;		sideLength = |deltaX|
-		;
-		;	else
-		;		sideLength = |deltaY|		
-		;
-		;int sideLength = abs(deltaX) >= abs(deltaY) ? abs(deltaX) : abs(deltaY);
-		;
-		;if (r2 > r1)
-		;  r5 = r2
-		;
-		;else
-		;  r5 = r1
+	;r2 abs(deltax)
+	;r1 abs(deltay)
+	;		
+	;	if |deltaX| >= |deltaY|
+	;		sideLength = |deltaX|
+	;
+	;	else
+	;		SideLength = |deltaY|		
+	;
+	;int SideLength = abs(deltaX) >= abs(deltaY) ? abs(deltaX) : abs(deltaY);
+	;
+	;if (r2 > r1)
+	;  r5 = r2
+	;
+	;else
+	;  r5 = r1
 		
-		CMP $rs2,$rs1
-		
-		JL L0
-		JMP L1
-		L0:
-			;SideLenght = deltay
-			MOV $rs5, $rs1
-			JMP L2
-		L1:
-			;SideLenght = deltax
-			MOV $rs5, $rs2
-		L2:
-		
-		;float(SideLenght)
-		ITOF $rs5
-		;LOAD $rs4, @deltax
-		LOAD $ra4, @0001'0003
-		;float(deltax)
-		ITOF $rs4
-		;incx = deltax / (float)sideLength
-		FDIV $rs4, $rs5
-		
-		;LOAD $rs3, @deltay
-		LOAD $ra3, @0001'0007
-		;float(deltay)
-		ITOF $rs3
-		;incy = deltay / (float)sideLength
-		FDIV $rs3, $rs5
+	CMP $rs2,$rs1
 	
-	POP $rs1
-	POP $rs0
-	;r5 sideLength
-	;r4 incx
-	;r3 incY
-	;r2 color	????
-	;r1 y0 currentY
-	;r0 x0 currentX
+	JL L0
+	JMP L1
+	L0:	
+		;else(|deltaX| < |deltay|)
+		;SideLength = deltay
+		MOV $rs5, $rs1
+		JMP L2
+	L1:
+		;SideLenght = deltax
+		MOV $rs5, $rs2
+	L2:
+	
+	;r5 = SideLength
+		
+	;float incX = deltaX / (float)sideLength; 
+	;float incY = deltaY / (float)sideLength;
+	
+	;---------------------------;	
+	;float(SideLength)
+	ITOF $rs5
+	
+	;LOAD $rs4, @deltax
+	LOAD $ro4, @0001'0003
+	
+	;float(deltax)
+	ITOF $rs4
+	
+	;incx = (float)deltax / (float)SideLength
+	FDIV $rs4, $rs5
+	
+	;---------------------------;
+	
+	;LOAD $rs3, @deltay
+	LOAD $ro3, @0001'0007
+	
+	;float(deltay)
+	ITOF $rs3
+	
+	;incy = (float)deltay / (float)SideLength	
+	FDIV $rs3, $rs5	
+	;---------------------------;
+	
+	;r5 SideLength(int)
+	;r4 incx(float)
+	;r3 incY(float)
+	;r2 color
+	;r1 y0 currentY(int -> float -> int...)
+	;r0 x0 currentX(int -> float -> int...)
+	
+	
+	;x0		 1000f
+	;y0		 10013
+	LOAD $ro0, @0001'000f
+	LOAD $ro1, @0001'0013
 	
 	ITOF $rs0
 	ITOF $rs1
@@ -144,20 +192,24 @@ FUNC drawLineDDA
 	FTOI $rs5 
 	drawLoop:
 		
-		;PUSH ???
-		PUSH $ro2
+		
 			
-			;load color
-			LOAD $ra2, @0000'ffff
-			
-			;r0,r1,r2
-			;x0,y0,color
-			CALL DrawPixel
+		;load color
+		LOAD $ra2, @0000'ffff
 		
-		POP $ro2
+		;round() ~~
+		FTOI $ro0
+		FTOI $ro1
+		
+		;r0,r1,r2
+		;x0,y0,color
+		CALL DrawPixel
+		
+		ITOF $ro0  
+		ITOF $ro1
 		
 		
-		;currentX += incX
+		;currentX += incX 
 		FADD $ro0, $ro4
 		;currentY += incY
 		FADD $ro1, $ro3
@@ -166,13 +218,13 @@ FUNC drawLineDDA
 		PUSH $ro0
 			;r0 = i
 			;LOAD i
-			LOAD $ra0, @0001'000B
+			LOAD $ro0, @0001'000B
 			; i, sideLength
 			CMP $ro0, $ro5
 			;i++
 			ADD $ra0, 0x0001
 			;STR i
-			STR @0001'000B, $ra0
+			STR @0001'000B, $ro0
 			
 		;POP currentX
 		POP $ro0
@@ -180,18 +232,6 @@ FUNC drawLineDDA
 	
 RET
 
-/*
-float currentX = x0;
-	float currentY = y0;
-
-	for (size_t i = 0; i <= sideLength; i++)
-	{
-		drawPixel(round(currentX), round(currentY), color);
-		currentX += incX;
-		currentY += incY;
-	}
-
-	*/
 	
 FUNC abs
 	;r0 = x 
@@ -215,6 +255,7 @@ FUNC abs
 	MOV $ro1,$ro0
 	
 RET
+
 /*
 
 FUNC abs
@@ -230,6 +271,7 @@ FUNC abs
 	
 RET
 
+
 */
 
 FUNC DrawPixel
@@ -242,9 +284,11 @@ FUNC DrawPixel
 		;r1 = y0
 		;r0 = x0
 		
+		;frameBuffer[r0] = r2
+		
 		;round() ~~
-		FTOI $ro0
-		FTOI $ro1
+		;FTOI $ro0
+		;FTOI $ro1
 		
 		;HATA: 1 bayt kayma var
 		;x++

@@ -1140,12 +1140,24 @@ void Parser::parseLOAD()
 		//load rx,sayi
 		case asmc::TokenType::HEXNUMBER:
 		case asmc::TokenType::FLOAT:
+		case asmc::TokenType::DECIMAL:
 
+			//TODO check
 			if (m_currentToken.m_type == asmc::TokenType::FLOAT)
 			{
 				uint32_t fval = rdx::decToIEEE754_32(m_currentToken.m_text);
 				m_currentToken.m_text = rdx::hexIEEE754_32ToStr(fval);
 				regType = asmc::UzTip::REG_32;
+			}
+			else if (m_currentToken.m_type == asmc::TokenType::DECIMAL)
+			{
+				//dec => hex str
+				m_currentToken.m_text = rdx::decToHex(std::stoi(m_currentToken.m_text));
+
+				while (m_currentToken.m_text.length() < (regType + 1) * 2)
+				{
+					m_currentToken.m_text = "0" + m_currentToken.m_text;
+				}
 			}
 
 			//----------//

@@ -1,72 +1,21 @@
 close_debug
 
-CALL drawDots	
+LOAD $ra0, 0x000a
+LOAD $ra1, 0x000a
 
-;x0,y0
-LOAD $ra0, 50
-LOAD $ra1, 50
-;x1,y1
-LOAD $ra2, 50
-LOAD $ra3, 160
-;x2,y2
-LOAD $ra4, 100
-LOAD $ra5, 160
+LOAD $ra2, 0x00a0
+LOAD $ra3, 0x00a0
+
+LOAD $ra4, 0x00a0
+LOAD $ra5, 0x000a
 
 PUSH $ro5
-LOAD $ra5, 0xf0f0
+LOAD $ra5, 0xffff
 
 CALL drawTriangle
 POP $ro0
 
 HLT
-
-FUNC drawDots
-	
-	;x
-	LOAD $ro0, 1
-	;y
-	LOAD $ro1, 1
-	;renk
-	LOAD $ra2, 0xffff
-	;i = 0
-	LOAD $ro3, 0
-	;j = 0
-	LOAD $ro4, 0
-	
-	/*
-	while i < 800
-		while j < 600
-			DrawPixel(i,j);
-			j++;
-		i++;	
-	*/
-	   
-	drawDotsLoop:
-		
-		;j = 0
-		LOAD $ro4, 0x0000'0000
-		;x = 0
-		LOAD $ro0, 0x0000'0000
-		drawDotsLoop_L0:
-			CALL DrawPixel
-			
-			CMP $ro4, 0x0000'0040
-			;j++
-			ADD $ro4, 0x0000'0001
-			;x++
-			ADD $ro0, 0x0000'000a
-			JNE drawDotsLoop_L0
-					
-		CMP $ro3,0x0000'0020
-		;i++
-		ADD $ro3,0x0000'0001
-		;y++
-		ADD $ro1,0x0000'000a
-		
-		JNE drawDotsLoop
-	
-RET
-
 
 FUNC drawTriangle
 	;r0,r1,r2,r3,r4,stack,r5
@@ -116,41 +65,53 @@ FUNC drawTriangle
 	STR @0001'002b, $ro5	;y2
 	;renk => ram
 	STR @0001'002f, $ro4	;renk
-	
-	
-	;x0		1'0017,10018,10019,1001a
-	;y0		1'001b,1001c,1001d,1001e
-	;x1		1'001f,10020,10021,10022
-	;y1		1'0023,10024,10025,10026
-	;x2		1'0027,10028,10029,1002a
-	;y2		1'002b,1002c,1002d,1002e
-	;renk	1'002f,10030,10031,10032				
-	
-	;x2,y2 => x0,y0
-	LOAD $ro0, @0001'0027
-	LOAD $ro1, @0001'002b
-	LOAD $ro2, @0001'0017
-	LOAD $ro3, @0001'001b
-	LOAD $ro4, @0001'002f
-	CALL drawLineDDA
-	
-	;x0,y0 => x1,y1
+		
+	;(x0,y0) => (x1,y1)
+	;x0
 	LOAD $ro0, @0001'0017
-	LOAD $ro1, @0001'001b
-	LOAD $ro2, @0001'001f
-	LOAD $ro3, @0001'0023
-	LOAD $ro4, @0001'002f
+	;y0
+	LOAD $ro1, @0001'001b	
+	;x1
+	LOAD $ro2, @0001'001f	
+	;y1
+	LOAD $ro3, @0001'0023	
+	;renk
+	LOAD $ro4, @0001'002f	
+	
+	LOAD $ra0, 0x000a
+	LOAD $ra1, 0x000a
+	LOAD $ra2, 0x00a0
+	LOAD $ra3, 0x00a0
+	LOAD $ra4, 0xffff
 	CALL drawLineDDA
 	
-	;x1,y1 => x2,y2
-	LOAD $ro0, @0001'001f
-	LOAD $ro1, @0001'0023
-	LOAD $ro2, @0001'0027
-	LOAD $ro3, @0001'002b
-	LOAD $ro4, @0001'002f
+	;(x1,y1) => (x2,y2)
+	;x1
+	LOAD $ro0, @0001'001f	
+	;y1
+	LOAD $ro1, @0001'0023	
+	;x2
+	LOAD $ro2, @0001'0027	
+	;y2
+	LOAD $ro3, @0001'002b	
+	;renk
+	LOAD $ro4, @0001'002f	
+	
 	CALL drawLineDDA
 	
+	;(x2,y2) => (x0,y0)
+	;x2
+	LOAD $ro0, @0001'0027	
+	;y2
+	LOAD $ro1, @0001'002b	
+	;x0
+	LOAD $ro2, @0001'0017	
+	;y0
+	LOAD $ro3, @0001'001b	
+	;renk
+	LOAD $ro4, @0001'002f	
 	
+	CALL drawLineDDA
 	
 RET
 
@@ -162,7 +123,7 @@ FUNC drawLineDDA
 	;r4
 	;color
 	
-	;color    0'ffff,10000,10001,10002
+	;color    0'ffff,!10000,10001,10002
 	;deltax   1'0003,10004,10005,10006
 	;deltay   1'0007,10008,10009,1000a
 	;i        1'000b,1000c,1000d,1000e
@@ -289,8 +250,6 @@ FUNC drawLineDDA
 		;load color
 		LOAD $ra2, @0000'ffff
 		
-		PUSH $ro0
-		PUSH $ro1
 		;round() ~~
 		FTOI $ro0
 		FTOI $ro1
@@ -299,8 +258,8 @@ FUNC drawLineDDA
 		;x0,y0,color
 		CALL DrawPixel
 		
-		POP $ro1
-		POP $ro0
+		ITOF $ro0  
+		ITOF $ro1
 		
 		
 		;currentX += incX 
@@ -369,13 +328,24 @@ RET
 */
 
 FUNC DrawPixel
-	;r0 x
-	;r1 y
+	;r0 x(float)
+	;r1 y(float)
 	;r2 argb_4444
 	
 	PUSH $ro0
 	PUSH $ro1
-			
+		;r1 = y0
+		;r0 = x0
+		
+		;frameBuffer[r0] = r2
+		
+		;round() ~~
+		;FTOI $ro0
+		;FTOI $ro1
+		
+		;HATA: 1 bayt kayma var
+		;x++
+		;ADD $rs0, 0x01
 		;y * width
 		MUL $ro1, 0x0000'0320
 		;y * width + x

@@ -84,7 +84,10 @@
 		CMP_rx_adr
 
 ### hatalar
-
+	
+	LOAD $ro5, @ro3
+	std::stoul() hatasi veriyor uztip parcasini tanimiyor
+		dogru yazimi simdilik => LOAD $ro5, @r3, LOAD $rux, @ry
 
     kaynak:
         Lexer::lexSingleChar()

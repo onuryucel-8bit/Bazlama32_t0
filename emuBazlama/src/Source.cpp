@@ -25,10 +25,12 @@ cxxtimer::Timer timer;
 
 using Color_t = uint16_t;
 
+int emuStep = 10;
+
 int emuWindowWidth = 800;
 int emuWindowHeight = 600;
 
-int windowWidth = 800;
+int windowWidth = 1000;
 int windowHeight = 800;
 
 bool f_running = true;
@@ -217,7 +219,7 @@ void drawImgui()
 		f_runEmu = !f_runEmu;
 
 		//TODO ? ternary
-		/*if (f_runEmu == true)
+		if (f_runEmu == true)
 		{
 			timer.start();
 		}
@@ -225,7 +227,7 @@ void drawImgui()
 		{
 			timer.printElapsedTime();
 			timer.reset();			
-		}*/
+		}
 	}
 
 
@@ -266,6 +268,9 @@ void drawImgui()
 
 	ImGui::NewLine();	
 	ImGui::SliderFloat("slider", &io->FontGlobalScale, 0, 5);
+
+	ImGui::NewLine();
+	ImGui::SliderInt("emuStep", &emuStep, 0, 500);
 
 	ImGui::End();
 	//=====================================================//
@@ -313,7 +318,8 @@ void draw()
 	SDL_UnlockTexture(canvas);*/
 
 	//load colorbuffer
-	SDL_UpdateTexture(canvas, NULL, colorBuffer, (int)(emuWindowWidth * sizeof(Color_t)));
+	SDL_UpdateTexture(canvas, NULL, emu.m_frameBuffer.data(), (int)(emuWindowWidth * sizeof(Color_t)));
+	//SDL_UpdateTexture(canvas, NULL, colorBuffer, (int)(emuWindowWidth * sizeof(Color_t)));
 
 	
 
@@ -442,34 +448,37 @@ int main()
 	
 	
 
-	while (f_running)
+	while (f_running && !emu.f_error)
 	{
 		processEvent();
 
 		if (f_runEmu == true || f_runStep == true)
 		{		
 			
-			emu.step();
+			for (size_t i = 0; i < emuStep; i++)
+			{
+				emu.step();
+			}
 			
 			//std::cout << "REGISTER 0:" << emu.m_registerFile[0] << "\n";
 
 			f_runStep = false;
 
-			if (emu.TEST_counter == 4)
+			/*if (emu.TEST_counter == 4)
 			{
           		std::cout << "NE BOK YIYORSUN SOYLE, SOYLE ULAN!!!\n";
-			}
+			}*/
 
 			/*for (size_t i = 0; i < emuWindowWidth * emuWindowHeight; i++)
 			{
 				colorBuffer[i] = 0xf0f0;
 			}*/
-			
+			/*
 			for (size_t i = 0; i < emuWindowWidth * emuWindowHeight; i++)
 			{
 				colorBuffer[i] = emu.m_frameBuffer[i];
 			}
-			
+			*/
 			//for (size_t i = 0; i < emuWindowWidth * emuWindowHeight; i++)
 			//{
 			//	//colorBuffer[i] = getBytes_t0(baz::UzTip::REG_16, 0 + (i * 2));

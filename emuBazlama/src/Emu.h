@@ -33,7 +33,7 @@
 
 namespace baz
 {
-
+	constexpr size_t DEBUG_ADR = 0x11c;
 	
 	constexpr size_t KB = 1024;
 	constexpr size_t MB = 1024 * KB;
@@ -90,9 +90,9 @@ namespace baz
 
 	struct RegisterPart
 	{
-		baz::UzTip m_reguz;
-		uint8_t m_rega;
-		uint8_t m_regb;
+		baz::UzTip m_reguz = baz::UzTip::REG_8;
+		uint8_t m_rega = 0;
+		uint8_t m_regb = 0;
 	};
 
 	class Emu
@@ -120,6 +120,7 @@ namespace baz
 
 		int TEST_counter = 0;
 		
+		bool f_error = false;
 	private:		
 
 		std::shared_ptr<spdlog::logger> m_logger;
@@ -146,6 +147,8 @@ namespace baz
 		void storeBytesToStack(uint32_t data, baz::UzTip uz);
 
 		uint32_t getBytesFromStack(uint8_t uz);
+
+		void printError(std::string message);
 		//-----------------------------------//
 		//-----------------------------------//
 		//-----------------------------------//

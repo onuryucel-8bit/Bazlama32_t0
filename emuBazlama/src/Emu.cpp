@@ -9,7 +9,7 @@ namespace baz
 		m_ram.resize(baz::MB * 50);
 		m_frameBuffer.resize(baz::MB * 2);
 		//800*600*2 => grafik karti
-		fr.readFile(path, &m_ram);
+		fr.readFile(path, &m_ram);		
 
 		m_komut = m_ram[pc];
 
@@ -36,6 +36,11 @@ namespace baz
 
 	void Emu::run()
 	{
+		if (f_error == true)
+		{
+			return;
+		}
+
 		while (m_ram[pc] != baz::Komut::HLT)
 		{
 			step();
@@ -44,6 +49,12 @@ namespace baz
 
 	void Emu::step()
 	{
+
+		if (f_error == true)
+		{
+			return;
+		}
+
 		m_komut = m_ram[pc];
 
 		if (m_komut == baz::Komut::HLT)
@@ -73,7 +84,7 @@ namespace baz
 		//if (pc == 0x95)
 		//JL
 		//if (pc == 0xa2)
-		if (pc == 0xce && TEST_counter == 2)
+		if (pc == DEBUG_ADR)//&& TEST_counter == 2)
 		{
  			std::cout << "debug\n";
 		}
@@ -248,7 +259,11 @@ namespace baz
 
 		//load rx,@ry
 		case baz::Komut::LOAD_rx_regadr:
-			m_registerFile[regPart.m_rega] = m_ram[regPart.m_regb];
+			//TODO uztip rx @ry
+			
+			//adr
+			value = m_registerFile[regPart.m_regb];
+			m_registerFile[regPart.m_rega] = getBytes(baz::UzTip::REG_32, value);
 			break;
 
 		//load rx,@adr
@@ -421,11 +436,11 @@ namespace baz
 		case baz::Komut::SUB_rx_adr:
 		case baz::Komut::MUL_rx_adr:
 		case baz::Komut::DIV_rx_adr:
-
+			//TODO duzelt burayi
 			//adr
 			value = getBytes(baz::UzTip::REG_32);
-			m_registerFile[regPart.m_rega] += m_ram[value];
-			break;
+			m_registerFile[regPart.m_rega] += getBytes(regPart.m_reguz, value);
+			return;
 
 			//TODO $r(s,a,o)
 			//add rx,ry
@@ -876,7 +891,7 @@ namespace baz
 
 		float fval = std::bit_cast<float>(m_registerFile[regPart.m_rega]);
 
-		int value = (int)std::round(fval);
+		int value = (int)fval;
 								
 		m_registerFile[regPart.m_rega] = (uint32_t)value;
 	}
@@ -1054,15 +1069,18 @@ namespace baz
 			if (adr >= m_frameBuffer.size())
 			{
 				std::cout << "LAAAAN grafik karti poh yoluna gitti..........\n";
+
+				printError("TODO msg");
+				return;
 			}
 
 			//std::cout << std::hex << "address:" << adr << "\n";
-			TEST_counter++;
+			/*TEST_counter++;
 
 			if (TEST_counter == 2)
 			{
 				std::cout << "...Ne lan bu\n";
-			}
+			}*/
 
 			m_frameBuffer[adr] = data & 0xffff;
 		}
@@ -1138,6 +1156,12 @@ namespace baz
 		}
 
 		return retval;
+	}
+
+	void Emu::printError(std::string message)
+	{
+		std::cout << "ERROR::Emu\n";
+		f_error = true;
 	}
 
 	uint32_t Emu::getBytes(uint8_t uz, uint32_t adr)

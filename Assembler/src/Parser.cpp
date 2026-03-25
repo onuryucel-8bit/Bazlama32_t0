@@ -1,3 +1,94 @@
+/*
+
+CALL fnx
+
+FUNC fnx
+	...
+	...
+RET
+
+=======================================================
+----parseCall()----------------------------------------
+=======================================================
+
+  unresolvedTable						 SymbolTable
+ /----------------------------\		.--------------------------.
+ | fnx						  |		|fnx					   |
+ |============================|		|==========================|
+ | opcode     : CALL(0x14)	  |		|status	   : no_funcDef    | 
+ | ramIndex   : ramLocation   |		|ramIndex  :	-1		   |
+ | filename   : C:/ ...       |		|lineNumber:    -1		   |
+ | lineNumber : 1234          |		.--------------------------.
+ | status     : Func_No_Ret        |
+ \----------------------------/
+
+
+=======================================================
+----parseFUNC()----------------------------------------
+=======================================================
+
+if (m_symbolTable.contains(m_currentToken))
+	
+	UPDATE ramIndex,lineNumber
+
+		 SymbolTable
+	.--------------------------.
+	|fnx					   |
+	|==========================|
+	|status	   : no_funcDef    |
+	|ramIndex  :	4		   |
+	|lineNumber:    1		   |
+	.--------------------------.
+
+	if (m_symbolTable[m_currentToken].m_status == asmc::LabelStatus::Func_No_FuncDef)
+
+  unresolvedTable						 SymbolTable
+ /----------------------------\		.--------------------------.
+ | fnx						  |		|fnx					   |
+ |============================|		|==========================|
+ | opcode     : CALL(0x14)	  |		|status	   : Func_Called_NoRet  | 
+ | ramIndex   : ramLocation   |		|ramIndex  :	4		   |
+ | filename   : C:/ ...       |		|lineNumber:    1		   |
+ | lineNumber : 1234          |		.--------------------------.
+ | status     : Func_No_Ret        |
+ \----------------------------/	
+
+======================================================
+----parseRET()----------------------------------------
+======================================================
+
+if (m_symbolTable.contains(m_lastFuncName))
+{
+	if (m_symbolTable[m_lastFuncName].m_status == asmc::LabelStatus::Func_Called_NoRet)
+	{
+		m_symbolTable[m_lastFuncName].m_status = asmc::LabelStatus::Func_Called;
+	}
+	else
+	{
+		m_symbolTable[m_lastFuncName].m_status = asmc::LabelStatus::Func_No_Call;
+	}
+}
+
+  unresolvedTable						 SymbolTable
+ /----------------------------\		.--------------------------.
+ | fnx						  |		|fnx					   |
+ |============================|		|==========================|
+ | opcode     : CALL(0x14)	  |		|status	   : Func_Called        |
+ | ramIndex   : ramLocation   |		|ramIndex  :	4		   |
+ | filename   : C:/ ...       |		|lineNumber:    1		   |
+ | lineNumber : 1234          |		.--------------------------.
+ | status     : Func_No_Ret        |
+ \----------------------------/
+
+======================================================
+----CheckTables()-------------------------------------
+======================================================
+
+
+
+*/
+
+
 #include "pch.h"
 #include "Parser.h"
 namespace asmc
@@ -198,7 +289,7 @@ void Parser::debug()
 	if (f_error)
 	{
 		std::cout << rang::fg::red
-			<< "Undefined symbol detected"
+			<< "LF_Undefined symbol detected"
 			<< rang::style::reset
 			<< "\n";
 		return;
@@ -219,7 +310,7 @@ void Parser::debug()
 	}
 
 	//TODO disassembler flag
-	m_disassembler.run(m_output);
+	m_disassembler.run(m_output, m_unresolvedTable, m_symbolTable);
 
 
 	
@@ -358,25 +449,25 @@ void Parser::checkTables()
 		switch (value.m_status)
 		{
 
-			case asmc::LabelStatus::Undefined:
-				printError("Undefined label/func");
+			case asmc::LabelStatus::LF_Undefined:
+				printError("LF_Undefined label/func");
 			break;
 
-			case asmc::LabelStatus::Called_NoRet:
+			case asmc::LabelStatus::Func_Called_NoRet:
 				printError("Couldnt find RET");
 			break;
 
-			case asmc::LabelStatus::No_Call:
+			case asmc::LabelStatus::Func_No_Call:
 				printWarning("Func [" + symKey.m_text + "] was not called");
 			break;
 			
-			case asmc::LabelStatus::No_Ret:
+			case asmc::LabelStatus::Func_No_Ret:
 				printError("func(s) dont have RET");
 			break;
 
-			case asmc::LabelStatus::Called:
-			case asmc::LabelStatus::NotUsed:
-			case asmc::LabelStatus::Used:
+			case asmc::LabelStatus::Func_Called:
+			case asmc::LabelStatus::LF_NotUsed:
+			case asmc::LabelStatus::Used: 
 				if (f_error == false || fd_scanTables == true)
 				{
 					//check jump table if label used
@@ -393,7 +484,7 @@ void Parser::checkTables()
 								memlay.m_opcode = entry[i].m_opcode;
 
 
-								if (entry[i].m_opcode == dasm::JMP && entry[i].m_ramIndex == 0x106)
+								if (entry[i].m_opcode == dasm::CALL_adr && entry[i].m_ramIndex == 0x2c2)
 								{
 									std::cout << "TEST ??\n";
 								}
@@ -417,13 +508,13 @@ void Parser::checkTables()
 					}
 
 					////for warning
-					//if (value.m_status == asmc::LabelStatus::NotUsed)
+					//if (value.m_status == asmc::LabelStatus::LF_NotUsed)
 					//{
 					//	printWarning("Label not used[" + symKey + "]");
 					//}
 				}
 
-				if (value.m_status == asmc::LabelStatus::NotUsed)
+				if (value.m_status == asmc::LabelStatus::LF_NotUsed)
 				{
 					switch (symKey.m_type)
 					{
@@ -442,12 +533,17 @@ void Parser::checkTables()
 	}//FOR end
 }
 
+void Parser::TEST_print(std::string message)
+{
+	std::cout << message << "\n";
+}
+
 void Parser::program()
 {
 	
 	/*if (m_currentToken.m_type > asmc::TokenType::LABEL || m_currentToken.m_type < 0)
 	{
-		printError("Undefined token");
+		printError("LF_Undefined token");
 	}
 	else
 	{
@@ -1057,7 +1153,7 @@ void Parser::parseDEFINE()
 
 	// #define abc 0x54
 	sym.m_fileName = m_lexer.getCurrentFileName();
-	sym.m_lineNumber = m_lineNumber;
+	sym.m_lineNumber = m_currentToken.m_lineNumber;
 
 	
 	switch (m_currentToken.m_type)
@@ -1687,6 +1783,7 @@ void Parser::parseCALL()
 		printError("invalid CALL command ");
 	}
 	
+	
 
 	//uint8_t opcode = m_opcodeHexTable[asmc::TokenType::CALL];
 	asmc::MemoryLayout memlay;	
@@ -1699,10 +1796,10 @@ void Parser::parseCALL()
 	case asmc::TokenType::ID:
 		memlay.m_opcode = asmc_CombineModBits(asmc::TokenType::CALL, 1);
 				
-		//func is defined
-		if (m_symbolTable.contains(m_currentToken) && m_symbolTable[m_currentToken].m_status != asmc::LabelStatus::No_FuncDef)
+		//func in symbol table AND func is defined
+		if (m_symbolTable.contains(m_currentToken) && m_symbolTable[m_currentToken].m_status != asmc::LabelStatus::Func_No_FuncDef)
 		{
-			m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::Called;			
+			m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::Func_Called;			
 			memlay.m_ramIndex = m_ramLocation;
 			memlay.m_regFlag = asmc::RegisterFlag::NoReg;
 			m_ramLocation++;
@@ -1722,9 +1819,39 @@ void Parser::parseCALL()
 			m_output.push_back(memlay);
 		}
 		//func definition after the CALL command ?
+		/*
+		* CALL fnx
+		*
+		* FUNC fnx
+		*	... 
+		*	...
+		* RET
+		* 
+		* 
+		* m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::Func_No_FuncDef;
+		* 
+		* SymbolTable						
+		* .--------------------------.		
+		* |fnx						 |
+		* |==========================|
+		* |status	  : no_funcDef   |
+	    * .--------------------------.		
+		* 
+		* unresolvedTable
+		* /----------------------------\
+		* |fnx						   |
+		* |============================|
+		* |opcode    : CALL(0x14)      |
+		* |ramIndex  : ramLocation	   |
+		* |filename  : C:/...		   |
+	    * |lineNumber: 1234			   |
+		* |status    : Func_No_Ret		   |
+		* \----------------------------/
+		* 
+		*/
 		else
 		{
-			m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::No_FuncDef;
+			m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::Func_No_FuncDef;
 
 			asmc::UnresolvedEntry entry;
 
@@ -1735,8 +1862,8 @@ void Parser::parseCALL()
 			//entry.m_secondPart = -1;
 			//entry.m_packetSize = 2;
 			entry.m_fileName = m_lexer.getCurrentFileName();
-			entry.m_lineNumber = lineNumber;
-			entry.m_status = asmc::LabelStatus::No_Ret;
+			entry.m_lineNumber = m_currentToken.m_lineNumber;
+			entry.m_status = asmc::LabelStatus::Func_No_Ret;
 
 			m_ramLocation += asmc_WORD;
 
@@ -1782,42 +1909,56 @@ void Parser::parseFUNC()
 	if (m_peekToken.m_type != asmc::TokenType::ID)
 	{
 		printError("FUNC must be followed by a function name");
+		return;
 	}
 
 	moveCurrentToken();
 
 	//FIX !! func def - call
+	
+	//TODO remove TEST 
+	/*if (m_ramLocation == 0x29d)
+	{
+		TEST_print("TEST");
+	}*/
+
+	
 
 	//is func definition in symbol table
 	if (m_symbolTable.contains(m_currentToken))
 	{
+		//update symbol ramIndex, lineNumber
+		m_symbolTable[m_currentToken].m_ramIndex = m_ramLocation;
+		m_symbolTable[m_currentToken].m_lineNumber = m_currentToken.m_lineNumber;
+		m_symbolTable[m_currentToken].m_fileName = m_lexer.getCurrentFileName();
+
 		//is func definition called?
-		if (m_symbolTable[m_currentToken].m_status == asmc::LabelStatus::No_FuncDef)
+		if (m_symbolTable[m_currentToken].m_status == asmc::LabelStatus::Func_No_FuncDef)
 		{
-			m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::Called_NoRet;
+			m_symbolTable[m_currentToken].m_status = asmc::LabelStatus::Func_Called_NoRet;
 
 			//combine with CALL command
-			for (const asmc::UnresolvedEntry& entry : m_unresolvedTable[m_currentToken])
-			{
-				asmc::MemoryLayout memlay;
+			//for (const asmc::UnresolvedEntry& entry : m_unresolvedTable[m_currentToken])
+			//{
+			//	asmc::MemoryLayout memlay;
 
-				memlay.m_opcode = entry.m_opcode;
-				memlay.m_ramIndex = entry.m_ramIndex;
-				memlay.m_regFlag = asmc::RegisterFlag::NoReg;
-				memlay.m_packetSize = asmc::UzTip::REG_32 + 1;
-				memlay.m_packet = new uint8_t[asmc::UzTip::REG_32 + 1];
+			//	memlay.m_opcode = entry.m_opcode;
+			//	memlay.m_ramIndex = entry.m_ramIndex;
+			//	memlay.m_regFlag = asmc::RegisterFlag::NoReg;
+			//	memlay.m_packetSize = asmc::UzTip::REG_32 + 1;
+			//	memlay.m_packet = new uint8_t[asmc::UzTip::REG_32 + 1];
 
-				//m_ramLocation++;
-				uint32_t funcAdr = m_ramLocation;
-				for (int i = 3; i >= 0; i--)
-				{
-					uint32_t value = funcAdr & (0xff << (8 * (3 - i)));
+			//	//m_ramLocation++;
+			//	uint32_t funcAdr = m_ramLocation;
+			//	for (int i = 3; i >= 0; i--)
+			//	{
+			//		uint32_t value = funcAdr & (0xff << (8 * (3 - i)));
 
-					memlay.m_packet[i] = value >> (8 * (3 - i));
-				}
+			//		memlay.m_packet[i] = value >> (8 * (3 - i));
+			//	}
 
-				m_output.push_back(memlay);
-			}
+			//	m_output.push_back(memlay);
+			//}
 		}
 		//else
 			//print error func with same name twice or more
@@ -1829,8 +1970,8 @@ void Parser::parseFUNC()
 		{
 			.m_ramIndex = m_ramLocation,
 			.m_fileName = m_lexer.getCurrentFileName(),
-			.m_lineNumber = m_lineNumber,
-			.m_status = asmc::LabelStatus::No_Ret
+			.m_lineNumber = m_currentToken.m_lineNumber,
+			.m_status = asmc::LabelStatus::Func_No_Ret
 		};
 
 		m_symbolTable[m_currentToken] = sym;
@@ -1856,7 +1997,18 @@ void Parser::parseRET()
 
 	if (m_symbolTable.contains(m_lastFuncName))
 	{
-		m_symbolTable[m_lastFuncName].m_status = asmc::LabelStatus::No_Call;
+		if (m_symbolTable[m_lastFuncName].m_status == asmc::LabelStatus::Func_Called_NoRet)
+		{
+			m_symbolTable[m_lastFuncName].m_status = asmc::LabelStatus::Func_Called;
+		}
+		else
+		{
+			m_symbolTable[m_lastFuncName].m_status = asmc::LabelStatus::Func_No_Call;
+		}		
+	}
+	else
+	{
+		printError("RET m_symbolTable.contains(m_lastFuncName) PARSER");
 	}
 
 	m_lastFuncName.m_text = "";
@@ -1878,7 +2030,7 @@ void Parser::parseLabel()
 	}
 	else
 	{
-		m_symbolTable[m_currentToken] = { m_ramLocation, m_lexer.getCurrentFileName(), m_lineNumber, asmc::LabelStatus::NotUsed };
+		m_symbolTable[m_currentToken] = { m_ramLocation, m_lexer.getCurrentFileName(), m_currentToken.m_lineNumber, asmc::LabelStatus::LF_NotUsed };
 	}
 	
 	m_lineNumber++;
@@ -1956,7 +2108,7 @@ void Parser::parseJMP()
 		
 		entry.m_fileName = m_lexer.getCurrentFileName();
 		entry.m_lineNumber = m_lineNumber;
-		entry.m_status = asmc::LabelStatus::Undefined;
+		entry.m_status = asmc::LabelStatus::LF_Undefined;
 
 		m_ramLocation += asmc_WORD;
 

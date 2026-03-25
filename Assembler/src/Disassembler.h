@@ -23,7 +23,9 @@ namespace dasm
 		Disassembler();
 		~Disassembler();
 
-		void run(std::vector<asmc::MemoryLayout>& memlay);
+		void run(std::vector<asmc::MemoryLayout>& memlay, 
+			std::unordered_map<asmc::Token, std::vector<asmc::UnresolvedEntry>>& unresolvedTable,
+			std::unordered_map<asmc::Token, asmc::Symbol> symbolTable);
 	private:
 		//std::unordered_map<uint8_t, dasm::InstructionInfo> m_opcodeTable;
 	};	

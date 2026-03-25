@@ -1,9 +1,8 @@
 close_debug
 
-CALL drawDots
-
+	
 /*
-
+CALL drawDots
 
 	  [0,100,0]		[100,100,0] 
 		*-------------*
@@ -50,8 +49,6 @@ STR @0001'0052, $ro3
 STR @0001'0056, $ro4
 
 */
-
-CALL clear
 
 LOAD $ro0, 100
 LOAD $ro1, 100
@@ -553,7 +550,7 @@ FUNC clear
 	LOAD $ro1, 0x0000'0000
 					
 	clearL1:
-		
+		;HATA VAR ASSEMBLER adresi 0xffff'ffff getiriyor
 		CALL DrawPixel
 		;x++
 		ADD $ro0, 0x0000'0001

@@ -12,7 +12,9 @@ namespace dasm
 	{
 	}
 
-	void Disassembler::run(std::vector<asmc::MemoryLayout>& memlay)
+	void Disassembler::run(std::vector<asmc::MemoryLayout>& memlay, 
+		std::unordered_map<asmc::Token, std::vector<asmc::UnresolvedEntry>>& unresolvedTable,
+		std::unordered_map<asmc::Token, asmc::Symbol> symbolTable)
 	{
 		std::ofstream file(cmake_PROJECT_OUTPUT "disassembler.txt");
 
@@ -32,8 +34,21 @@ namespace dasm
 			{
 				size_t ramIndex = item.m_ramIndex;
 
-				std::cout << ramIndex << "|" << magic_enum::enum_name(itemEnum.value()) << "\n";
+				for (const auto& [key, value] : symbolTable)
+				{
+					if (value.m_ramIndex == ramIndex)
+					{
+						file << "*--------------------------*\n";
+						file << "|" << key.m_text << "|\n";
+						file << "*--------------------------*\n";
+					}
+				}
+
+				//std::cout << ramIndex << "|" << magic_enum::enum_name(itemEnum.value()) << "\n";
 				file << ramIndex << "|" << magic_enum::enum_name(itemEnum.value()) << "\n";
+
+				
+
 				ramIndex++;
 				
 				if (item.m_regFlag == asmc::RegisterFlag::Reg)

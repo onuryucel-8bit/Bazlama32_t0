@@ -37,7 +37,7 @@ namespace asmc
 		*
 		* CALL mult
 		*	...
-		* FUNC mult <= Called
+		* FUNC mult <= Func_Called
 		*  ...
 		* RET
 		*
@@ -45,13 +45,13 @@ namespace asmc
 		*
 		* CALL mult
 		*   ...
-		* FUNC mult <= Called_NoRet
+		* FUNC mult <= Func_Called_NoRet
 		*  ...
 		*  ...
 		*
 		* ------------WARNING---------------
 		*
-		* FUNC mult <= No_Call
+		* FUNC mult <= Func_No_Call
 		*  ...
 		* RET
 		*
@@ -62,21 +62,22 @@ namespace asmc
 		*
 		* ------------ERROR------------------
 		* ...
-		* FUNC mult <= No_Ret
+		* FUNC mult <= Func_No_Ret
 		* ...
 		*
 		*/
 
-
+		Empty,
 		Used,
-		NotUsed,		//warning
-		Undefined,		//error     !!
+		
+		LF_NotUsed,			//warning
+		LF_Undefined,		//error     !!
 
-		No_FuncDef,		//error		!!
-		Called_NoRet,	//error		!!
-		No_Ret,			//error		!!
-		No_Call,		//warning	
-		Called
+		Func_No_FuncDef,	//error		!!
+		Func_Called_NoRet,	//error		!!
+		Func_No_Ret,		//error		!!
+		Func_No_Call,		//warning	
+		Func_Called
 	};
 
 
@@ -131,11 +132,10 @@ namespace asmc
 		int m_ramIndex = -1;
 
 		//for printing error or warning
-		std::string m_fileName;
-		int m_lineNumber = -1;
+		std::string m_fileName = "Empty";
+		size_t m_lineNumber = 0;
 
-		asmc::LabelStatus m_status;
-
+		asmc::LabelStatus m_status = asmc::LabelStatus::Empty;	
 	};
 
 	struct PacketAdrPReg

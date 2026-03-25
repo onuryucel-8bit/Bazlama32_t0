@@ -53,7 +53,7 @@ namespace asmc
 		void run();
 
 	private:
-
+		void TEST_print(std::string message);
 		void program();
 		void debug();
 

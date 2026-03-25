@@ -71,11 +71,11 @@ namespace dasm
 			}
 			else
 			{
-				std::cout 
+				/*std::cout 
 					<< "ERROR::Disassembler invalid opcode [" 
 					<< std::hex 					
 					<< (int)item.m_opcode 
-					<< "]\n";
+					<< "]\n";*/
 				
 			}
 

@@ -38,6 +38,7 @@ namespace baz
 	{
 		if (f_error == true)
 		{
+			std::cout << "ERROR:: Emu\n";
 			return;
 		}
 
@@ -52,6 +53,7 @@ namespace baz
 
 		if (f_error == true)
 		{
+			std::cout << "ERROR:: Emu\n";
 			return;
 		}
 

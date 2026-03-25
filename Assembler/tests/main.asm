@@ -51,15 +51,11 @@ STR @0001'0056, $ro4
 
 */
 
-CALL clear
 
-LOAD $ro0, 100
-LOAD $ro1, 100
-LOAD $ro2, 30
-LOAD $ro3, 30
-LOAD $ra4, 0xffff
-CALL drawRect
+;x0,y0,x1,y1,x2,y2,renk
 
+;float x2 = x * cos(theta) - y * sin(theta);
+;float y2 = x * sin(theta) + y * cos(theta);
 
 
 HLT
@@ -569,3 +565,5 @@ FUNC clear
 	CMP $ro1, 0x0000'0258
 	JNE clearL1
 RET
+
+#include "sinTable.asm"

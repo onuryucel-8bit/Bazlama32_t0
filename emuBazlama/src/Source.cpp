@@ -193,6 +193,7 @@ void drawImgui()
 	
 	if (pressedStep || (ImGui::IsItemHovered() && ImGui::IsKeyPressed(ImGuiKey_Space)))
 	{
+		emuStep = 1;
 		f_runStep = true;
 		for (size_t i = 0; i < 8; i++)
 		{
@@ -251,6 +252,11 @@ void drawImgui()
 			f_runEmu = false;
 		}
 	}
+	if (ImGui::Button("f_error"))
+	{
+		emu.f_error = false;
+	}
+	
 
 	//--------------------------------------------------//
 	auto enmKmt = magic_enum::enum_cast<baz::Komut>(emu.m_komut);
@@ -448,7 +454,7 @@ int main()
 	
 	
 
-	while (f_running && !emu.f_error)
+	while (f_running)
 	{
 		processEvent();
 

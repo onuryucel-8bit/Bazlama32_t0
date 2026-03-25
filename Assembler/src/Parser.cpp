@@ -1117,13 +1117,16 @@ void Parser::parseDB()
 
 		}
 		
+		if (m_peekToken.m_type == asmc::TokenType::NEWLINE ||
+			(m_peekToken.m_type != asmc::TokenType::HEXNUMBER &&
+			m_peekToken.m_type != asmc::TokenType::STRING))
+		{
+			break;
+		}
 
 		moveCurrentToken();
 
-		if (m_currentToken.m_type == asmc::TokenType::NEWLINE)
-		{
-			moveCurrentToken();
-		}
+		
 	}
 }
 

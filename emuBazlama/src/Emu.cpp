@@ -193,6 +193,10 @@ namespace baz
 		case baz::Komut::FDIV_rx_regadr:
 		case baz::Komut::FDIV_rx_adr:
 		case baz::Komut::FDIV_rx_ry:
+		case baz::Komut::FMUL_rx_sayi:
+		case baz::Komut::FMUL_rx_regadr:
+		case baz::Komut::FMUL_rx_adr:
+		case baz::Komut::FMUL_rx_ry:
 			op_floatArithmetic();
 			break;
 

@@ -1,3 +1,11 @@
+### Projenin rafa kaldirilma sebepleri
+- Assembler func-ret tablolar arasi iliskisinin karmasiklasmasi
+- itof,ftoi float(ieee32)-int donusumleri
+- <b>Yetersiz register sayisi</b>(5 genel - 1 flag - 1 stackp)
+- Projenin baslangicinda Assembler icine r(s,a,o) eklenmesi
+- Assembler in #define gibi eklentilere pek acik olmamasi(tablolar arasi iliski karmasikligi)
+
+
 ### Bellek
 <img width="1332" height="639" alt="2026-03-12 15-37-30" src="https://github.com/user-attachments/assets/b65797cd-b74f-495a-9ca3-07bd271b99a5" />
 

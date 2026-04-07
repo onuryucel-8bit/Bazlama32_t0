@@ -33,7 +33,7 @@
 
 namespace baz
 {
-	constexpr size_t DEBUG_ADR = 0x11c;
+	constexpr size_t DEBUG_ADR = 0x24;
 	
 	constexpr size_t KB = 1024;
 	constexpr size_t MB = 1024 * KB;
